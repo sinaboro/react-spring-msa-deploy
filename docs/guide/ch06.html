@@ -1,0 +1,477 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>6장. GitHub Actions - 비밀 값 넣기와 워크플로 읽기 - 배포</title>
+<meta name="description" content="[react-spring-mas-postgresql](https://github.com/sinaboro/react-spring-mas-postgresql) 기초 과정의 MSA 로그인 게시판을 Docker 이미지로 만들어 Docker Hub 에 올리고, AWS EC2 에 배포한 뒤, push 하면 자동으로 배포되게(CI/CD) 하는 교안과 실습 코드입니다.">
+<meta property="og:title" content="6장. GitHub Actions - 비밀 값 넣기와 워크플로 읽기 - 배포"><meta property="og:description" content="[react-spring-mas-postgresql](https://github.com/sinaboro/react-spring-mas-postgresql) 기초 과정의 MSA 로그인 게시판을 Docker 이미지로 만들어 Docker Hub 에 올리고, AWS EC2 에 배포한 뒤, push 하면 자동으로 배포되게(CI/CD) 하는 교안과 실습 코드입니다."><meta property="og:image" content="https://sinaboro.github.io/react-spring-msa-deploy/images/fig_deploy_overview.png">
+<meta property="og:type" content="website">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-12 -12 24 24'%3E%3Cg fill='none' stroke='%2361dafb' stroke-width='1.6'%3E%3Cellipse rx='10' ry='4'/%3E%3Cellipse rx='10' ry='4' transform='rotate(60)'/%3E%3Cellipse rx='10' ry='4' transform='rotate(120)'/%3E%3C/g%3E%3Ccircle r='2' fill='%2361dafb'/%3E%3C/svg%3E">
+<script>
+if(/KAKAOTALK/i.test(navigator.userAgent)){location.href='kakaotalk://web/openExternal?url='+encodeURIComponent(location.href);}
+</script>
+<style>
+:root{--ink:#1f2328;--sub:#59636e;--line:#e3e6ea;--bg:#f7f8fa;--card:#fff;--navy:#16202e;--acc:#61dafb;--acc2:#0b7fab;
+--note:#eef8fc;--noteline:#61dafb;--code:#f3f5f7;--link:#0969da}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--ink:#e6edf3;--sub:#9da7b3;--line:#30363d;--bg:#0f141a;
+--card:#161b22;--navy:#0b1017;--note:#10232b;--noteline:#2a8fb0;--code:#1b222b;--link:#58a6ff;--acc2:#61dafb}}
+*{box-sizing:border-box}html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.75 "Pretendard","Malgun Gothic","Apple SD Gothic Neo",sans-serif;word-break:keep-all}
+a{color:var(--link)}img{max-width:100%;height:auto}
+header.top{background:var(--navy);color:#fff;position:sticky;top:0;z-index:5}
+header.top .in{max-width:1180px;margin:0 auto;padding:10px 16px;display:flex;gap:10px;align-items:center}
+header.top a{color:#fff;text-decoration:none}.logo{font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.logo b{color:var(--acc)}
+header.top .sp{flex:1}header.top .btn{font-size:14px;border:1px solid #ffffff55;border-radius:8px;padding:4px 10px;white-space:nowrap}
+.wrap{max-width:1180px;margin:0 auto;padding:0 16px}
+.doc{display:grid;grid-template-columns:250px minmax(0,1fr);gap:32px;padding:24px 16px 60px;max-width:1180px;margin:0 auto}
+.side{position:sticky;top:64px;align-self:start;max-height:calc(100vh - 80px);overflow:auto;font-size:14px}
+.side .cap{font-weight:800;margin:4px 10px 6px;color:var(--sub)}
+.side a{display:block;padding:5px 10px;border-radius:6px;color:var(--ink);text-decoration:none;line-height:1.45}
+.side a.on{background:var(--acc);color:#111;font-weight:700}.side a:hover:not(.on){background:var(--line)}
+.side .other{margin-top:14px;border-top:1px solid var(--line);padding-top:10px}
+article{min-width:0}
+article h1{font-size:28px;line-height:1.35;margin:0 0 20px;padding-bottom:12px;border-bottom:4px solid var(--acc)}
+article h2{font-size:22px;margin:40px 0 12px;padding-left:10px;border-left:5px solid var(--acc2)}
+article h3{font-size:18px;margin:28px 0 8px}
+figure{margin:18px 0;text-align:center}figure img{border:1px solid var(--line);border-radius:8px;background:#fff}
+figcaption{font-size:13px;color:var(--sub);margin-top:6px}
+.tbl{overflow-x:auto;margin:14px 0}table{border-collapse:collapse;width:100%;font-size:15px}
+th{background:var(--navy);color:#fff;text-align:left}th,td{padding:7px 10px;border:1px solid var(--line);vertical-align:top}
+blockquote.note{margin:16px 0;padding:10px 16px;background:var(--note);border-left:5px solid var(--noteline);border-radius:6px}
+blockquote.note p{margin:6px 0}
+code{background:var(--code);padding:1px 5px;border-radius:4px;font-family:Consolas,"D2Coding",monospace;font-size:.92em}
+.file{display:flex;justify-content:space-between;gap:10px;align-items:center;margin:18px 0 -6px;padding:6px 12px;
+background:var(--navy);color:#dfe6ee;border-radius:8px 8px 0 0;font:13px Consolas,monospace}
+.file a{color:var(--acc);font-family:inherit;white-space:nowrap}.file span{overflow-wrap:anywhere}
+.file+pre{border-top-left-radius:0;border-top-right-radius:0;margin-top:6px}
+pre{position:relative;background:var(--code);padding:34px 14px 12px;border-radius:8px;overflow-x:auto;border:1px solid var(--line)}
+pre code{background:none;padding:0;font-size:14px;line-height:1.55}
+pre code.hljs{padding:0;background:none}
+.copy{position:absolute;top:6px;right:6px;font-size:12px;padding:3px 9px;border-radius:6px;border:1px solid var(--line);
+background:var(--card);color:var(--ink);cursor:pointer;opacity:.85}.copy:hover{opacity:1}.copy.ok{background:#2da44e;color:#fff;border-color:#2da44e}
+.pager{display:flex;gap:12px;justify-content:space-between;margin-top:48px;padding-top:20px;border-top:1px solid var(--line)}
+.pager a{flex:1;padding:12px 14px;border:1px solid var(--line);border-radius:10px;text-decoration:none;color:var(--ink);background:var(--card)}
+.pager a small{display:block;color:var(--sub)}.pager .next{text-align:right}
+select.jump{display:none;width:100%;font-size:16px;padding:8px;margin-bottom:12px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--ink)}
+@media (max-width:860px){.doc{display:block;padding-top:16px}.side{display:none}select.jump{display:block}article h1{font-size:23px}
+header.top .hide-s{display:none}}
+.hero{background:var(--navy);color:#fff;padding:44px 0 36px}
+.hero h1{font-size:38px;margin:0 0 10px;line-height:1.25}.hero h1 b{color:var(--acc)}
+.hero p{margin:6px 0;color:#c9d4e0;max-width:760px}.hero .cta{display:flex;flex-wrap:wrap;gap:10px;margin-top:22px}
+.cta a{padding:11px 18px;border-radius:10px;text-decoration:none;font-weight:700}
+.cta .main{background:var(--acc);color:#111}.cta .sub{border:1px solid #ffffff66;color:#fff}
+.hero .twin{margin-top:16px;font-size:14px}.hero .twin a{color:var(--acc)}
+section{padding:36px 0 8px}section h2{font-size:24px;margin:0 0 6px}section .lead{color:var(--sub);margin:0 0 18px}
+.course{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:22px}
+.course>div{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px}
+.course h3{margin:0 0 4px;font-size:21px}.course .pdf{font-size:14px}
+.course ol{list-style:none;padding:0;margin:12px 0 0}
+.course li a{display:flex;gap:10px;align-items:center;padding:6px 8px;border-radius:8px;text-decoration:none;color:var(--ink)}
+.course li a:hover{background:var(--line)}
+.course li img{width:72px;height:44px;object-fit:cover;object-position:left top;border:1px solid var(--line);border-radius:5px;background:#fff;flex:none}
+.course li .noimg{width:72px;height:44px;border-radius:5px;background:var(--code);flex:none}
+.dl{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px}
+.dl a{display:block;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 14px;text-decoration:none;color:var(--ink)}
+.dl a:hover{border-color:var(--acc)}.dl b{font-family:Consolas,monospace}.dl small{display:block;color:var(--sub)}
+footer{padding:40px 0 50px;color:var(--sub);font-size:14px;text-align:center}
+@media (max-width:600px){.hero h1{font-size:28px}.course{grid-template-columns:1fr}}
+
+.overview{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px}
+.overview img{border:none}
+.course .lead2{color:var(--sub);font-size:14px;margin:2px 0 6px}
+</style></head><body>
+<header class="top"><div class="in">
+<a class="logo" href="../index.html">React + Spring <b>배포</b></a><span class="sp"></span>
+<a class="btn hide-s" href="../guide/ch00.html">교안</a>
+<a class="btn" href="../index.html#pdf">PDF</a>
+<a class="btn" href="https://github.com/sinaboro/react-spring-msa-deploy" target="_blank">GitHub</a>
+</div></header>
+<div class="doc">
+<nav class="side"><div class="cap">배포</div><a href="ch00.html">0장 과정 안내</a><a href="ch01.html">1장 배포를 위해 바꾼 코드</a><a href="ch02.html">2장 Docker 이미지 만들기</a><a href="ch03.html">3장 Docker Hub 에 이미지 올리기</a><a href="ch04.html">4장 AWS EC2 만들기</a><a href="ch05.html">5장 서버 준비와 첫 배포</a><a href="ch06.html" class=on>6장 GitHub Actions - 비밀 값 넣기와 워크플로 읽기</a><a href="ch07.html">7장 자동 배포 확인 - push 하면 서버가 바뀐다</a><a href="ch08.html">8장 정리와 삭제 - 요금이 나가지 않게</a><a href="appA.html">부록 A 오류 해결</a><a href="appB.html">부록 B 확인 문제 풀이</a><div class="other"><a href="../index.html">← 첫 화면</a><a href="../React_Spring_MSA_%EB%B0%B0%ED%8F%AC_%ED%95%99%EC%8A%B5%EA%B5%90%EC%95%88.pdf" target="_blank">PDF 교안</a></div></nav>
+<article>
+<select class="jump" onchange="location.href=this.value" aria-label="장 이동"><option value="ch00.html">0장 과정 안내</option><option value="ch01.html">1장 배포를 위해 바꾼 코드</option><option value="ch02.html">2장 Docker 이미지 만들기</option><option value="ch03.html">3장 Docker Hub 에 이미지 올리기</option><option value="ch04.html">4장 AWS EC2 만들기</option><option value="ch05.html">5장 서버 준비와 첫 배포</option><option value="ch06.html" selected>6장 GitHub Actions - 비밀 값 넣기와 워크플로 읽기</option><option value="ch07.html">7장 자동 배포 확인 - push 하면 서버가 바뀐다</option><option value="ch08.html">8장 정리와 삭제 - 요금이 나가지 않게</option><option value="appA.html">부록 A 오류 해결</option><option value="appB.html">부록 B 확인 문제 풀이</option></select>
+<h1 id="6장-github-actions---비밀-값-넣기와-워크플로-읽기">6장. GitHub Actions - 비밀 값 넣기와 워크플로 읽기</h1>
+<h2 id="학습-목표">학습 목표</h2>
+<ul>
+<li><strong>CI/CD</strong> 와 GitHub Actions 의 <strong>워크플로·잡·스텝</strong> 을 설명한다.</li>
+<li>저장소에 <strong>Variables</strong>(비밀 아님)와 <strong>Secrets</strong>(비밀)를 나눠 넣는다.</li>
+<li><code>deploy.yml</code> 을 위에서 아래로 읽으며, 5장에서 손으로 한 일과 짝을 맞춘다.</li>
+</ul>
+<h2 id="6-1-cicd-와-github-actions">6-1. CI/CD 와 GitHub Actions</h2>
+<ul>
+<li><strong>CI (Continuous Integration, 지속적 통합)</strong>: push 할 때마다 자동으로 빌드·검사해서 "합친 코드가 깨지지 않았는지" 바로 안다.</li>
+<li><strong>CD (Continuous Delivery/Deployment, 지속적 배포)</strong>: 빌드가 통과하면 서버까지 자동으로 내보낸다.</li>
+</ul>
+<p><strong>GitHub Actions</strong> 는 GitHub 이 빌려주는 컴퓨터(러너, runner)에서 우리가 적은 명령을 실행해 주는 서비스다. 명령은 저장소의 <code>.github/workflows/*.yml</code> 파일에 적는다. 공개 저장소는 무료다.</p>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>낱말</th>
+<th>뜻</th>
+<th>이 교안에서</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>워크플로(workflow)</td>
+<td>yml 파일 하나. 언제(<code>on</code>) 무엇을 할지</td>
+<td><code>deploy.yml</code></td>
+</tr>
+<tr>
+<td>잡(job)</td>
+<td>러너 한 대에서 도는 일 묶음. 잡끼리는 따로 돈다</td>
+<td><code>build</code> (4개), <code>deploy</code></td>
+</tr>
+<tr>
+<td>스텝(step)</td>
+<td>잡 안에서 차례로 하는 한 가지 일</td>
+<td>"소스 받기", "SSH 키 준비" ...</td>
+</tr>
+<tr>
+<td>액션(action)</td>
+<td>남이 만들어 둔 스텝 (<code>uses:</code>)</td>
+<td><code>actions/checkout</code>, <code>docker/build-push-action</code></td>
+</tr>
+<tr>
+<td>러너(runner)</td>
+<td>잡을 실행하는 GitHub 의 임시 컴퓨터 (Ubuntu)</td>
+<td>잡이 끝나면 사라진다</td>
+</tr>
+</tbody>
+</table></div>
+<figure><a href="../images/fig_workflow_flow.png" target="_blank"><img src="../images/fig_workflow_flow.png" alt="deploy.yml 이 하는 일 - 이미지 4개를 동시에 빌드한 뒤 배포하고 확인한다" loading="lazy"></a><figcaption>deploy.yml 이 하는 일 - 이미지 4개를 동시에 빌드한 뒤 배포하고 확인한다</figcaption></figure>
+<h2 id="6-2-variables-와-secrets">6-2. Variables 와 Secrets</h2>
+<p>러너는 매번 새로 만들어지는 남의 컴퓨터다. Docker Hub 토큰, EC2 열쇠, DB 비밀번호를 워크플로 파일에 적으면 공개 저장소에 그대로 드러난다. 그래서 값은 <strong>저장소 설정</strong>에 넣고, 워크플로에서는 이름으로만 부른다.</p>
+<figure><a href="../images/fig_secrets_flow.png" target="_blank"><img src="../images/fig_secrets_flow.png" alt="비밀 값의 길 - GitHub Secrets 에서 러너를 거쳐 서버의 .env 로" loading="lazy"></a><figcaption>비밀 값의 길 - GitHub Secrets 에서 러너를 거쳐 서버의 .env 로</figcaption></figure>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>종류</th>
+<th>쓰는 법</th>
+<th>로그에서</th>
+<th>넣을 값</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Variables</strong></td>
+<td><code>${{ vars.이름 }}</code></td>
+<td>그대로 보인다</td>
+<td><code>DOCKERHUB_USERNAME</code>, <code>EC2_HOST</code>, <code>EC2_USER</code></td>
+</tr>
+<tr>
+<td><strong>Secrets</strong></td>
+<td><code>${{ secrets.이름 }}</code></td>
+<td><code>***</code> 로 가려진다</td>
+<td><code>DOCKERHUB_TOKEN</code>, <code>EC2_SSH_KEY</code>, <code>DB_PASSWORD</code>, <code>JWT_SECRET</code></td>
+</tr>
+</tbody>
+</table></div>
+<p>Secrets 는 <strong>한 번 넣으면 GitHub 화면에서도 다시 볼 수 없다</strong>(고치기만 된다). 그래서 5장의 <code>server.env</code> 처럼 값을 따로 메모해 두었다가 넣는다.</p>
+<h3 id="variables-넣기-3개">Variables 넣기 (3개)</h3>
+<p>저장소 → <strong>Settings</strong> → 왼쪽 <strong>Secrets and variables</strong> → <strong>Actions</strong> → <strong>Variables</strong> 탭 → <strong>New repository variable</strong>.</p>
+<figure><a href="../images/f01_variables_form.jpg" target="_blank"><img src="../images/f01_variables_form.jpg" alt="Variable 넣기 - Name 과 Value 를 적고 Add variable" loading="lazy"></a><figcaption>Variable 넣기 - Name 과 Value 를 적고 Add variable</figcaption></figure>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Value (예시)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>DOCKERHUB_USERNAME</code></td>
+<td><code>rlaeocjf</code> (내 Docker Hub 아이디)</td>
+</tr>
+<tr>
+<td><code>EC2_HOST</code></td>
+<td><code>43.201.21.211</code> (4장에서 적은 퍼블릭 IP)</td>
+</tr>
+<tr>
+<td><code>EC2_USER</code></td>
+<td><code>ubuntu</code></td>
+</tr>
+</tbody>
+</table></div>
+<figure><a href="../images/f02_variables_list.jpg" target="_blank"><img src="../images/f02_variables_list.jpg" alt="Variables 를 넣은 모습 - 값이 그대로 보인다 (EC2_USER 는 아래에 이어진다)" loading="lazy"></a><figcaption>Variables 를 넣은 모습 - 값이 그대로 보인다 (EC2_USER 는 아래에 이어진다)</figcaption></figure>
+<h3 id="secrets-넣기-4개">Secrets 넣기 (4개)</h3>
+<p>같은 화면의 <strong>Secrets</strong> 탭 → <strong>New repository secret</strong>.</p>
+<figure><a href="../images/f04_secret_new.jpg" target="_blank"><img src="../images/f04_secret_new.jpg" alt="New secret - 이름과 값을 넣는다. 넣은 뒤에는 값을 다시 볼 수 없다" loading="lazy"></a><figcaption>New secret - 이름과 값을 넣는다. 넣은 뒤에는 값을 다시 볼 수 없다</figcaption></figure>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Secret 에 붙여 넣을 값</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>DOCKERHUB_TOKEN</code></td>
+<td>3장에서 만든 Access Token (<code>dckr_pat_...</code>, <strong>Read &amp; Write</strong>)</td>
+</tr>
+<tr>
+<td><code>EC2_SSH_KEY</code></td>
+<td><code>msa-deploy-key.pem</code> 파일의 <strong>내용 전체</strong></td>
+</tr>
+<tr>
+<td><code>DB_PASSWORD</code></td>
+<td><code>server.env</code> 의 DB_PASSWORD 값</td>
+</tr>
+<tr>
+<td><code>JWT_SECRET</code></td>
+<td><code>server.env</code> 의 JWT_SECRET 값</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>[PS]</strong> <code>.pem</code> 내용을 클립보드에 복사하기 - 메모장으로 열어 복사해도 된다</p>
+<pre><code class="language-powershell">Get-Content $key -Raw | Set-Clipboard
+</code></pre>
+<p><code>-----BEGIN RSA PRIVATE KEY-----</code> 줄부터 <code>-----END RSA PRIVATE KEY-----</code> 줄까지 <strong>빠짐없이</strong> 붙여 넣는다. 한 줄이라도 빠지면 6-4 의 SSH 스텝이 <code>Load key ... invalid format</code> 으로 실패한다.</p>
+<blockquote class="note">
+<p><strong>DB_PASSWORD 는 5장의 값과 같아야 한다.</strong> PostgreSQL 은 <strong>처음 켤 때</strong> 받은 비밀번호로 DB 를 만들고, 그 뒤로는 <code>POSTGRES_PASSWORD</code> 가 바뀌어도 DB 비밀번호를 바꾸지 않는다(데이터는 볼륨에 남아 있으므로). 다른 값을 넣으면 서비스가 <code>password authentication failed</code> 로 DB 에 접속하지 못한다. (부록 A)</p>
+</blockquote>
+<figure><a href="../images/f05_secrets_list.jpg" target="_blank"><img src="../images/f05_secrets_list.jpg" alt="Secrets 4개를 넣은 모습 - 값은 보이지 않는다" loading="lazy"></a><figcaption>Secrets 4개를 넣은 모습 - 값은 보이지 않는다</figcaption></figure>
+<p>다 넣었으면 내 PC 의 <code>server.env</code> 와 메모장에 적어 둔 토큰은 지운다. 이제 비밀 값은 <strong>GitHub Secrets 와 서버의 <code>.env</code></strong> 두 곳에만 있다.</p>
+<h2 id="6-3-워크플로-읽기-①---언제-그리고-build-잡">6-3. 워크플로 읽기 ① - 언제, 그리고 build 잡</h2>
+<div class="file"><span>📄 .github/workflows/deploy.yml</span><a href="https://github.com/sinaboro/react-spring-msa-deploy/blob/main/.github/workflows/deploy.yml" target="_blank">GitHub 에서 보기</a></div>
+
+<pre><code class="language-yaml"># =====================================================================
+# deploy.yml - main 브랜치에 push 하면 자동으로 &quot;빌드 → Docker Hub → EC2 배포&quot;
+#
+# 흐름
+#   ① build  : 이미지 4개를 동시에(matrix) 만들어 Docker Hub 에 올린다
+#   ② deploy : EC2 에 SSH 로 접속해 새 이미지를 받아(pull) 다시 켠다(up -d)
+#   ③ 확인   : http://EC2주소/api/posts 가 200 을 돌려줄 때까지 기다린다
+#
+# 저장소 Settings → Secrets and variables → Actions 에 미리 넣어 둘 값
+#   Variables (비밀 아님, 로그에 그대로 보임)
+#     DOCKERHUB_USERNAME  Docker Hub 사용자 이름        예) rlaeocjf
+#     EC2_HOST            EC2 공인 IP 또는 주소          예) 3.35.xx.xx
+#     EC2_USER            EC2 로그인 사용자              Ubuntu 이미지는 ubuntu
+#   Secrets (비밀, 로그에 *** 로 가려짐)
+#     DOCKERHUB_TOKEN     Docker Hub Access Token (Read &amp; Write)
+#     EC2_SSH_KEY         EC2 키 페어 .pem 파일의 내용 전체
+#     DB_PASSWORD         운영 DB 비밀번호 (아무 긴 글자)
+#     JWT_SECRET          JWT 서명 열쇠 (32글자 이상)
+# =====================================================================
+
+name: deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:          # Actions 화면의 &quot;Run workflow&quot; 단추로 직접 실행할 수도 있게
+
+jobs:
+  # ---------------------------------------------------------------- ① 이미지 빌드·업로드
+  build:
+    # 아직 Variables 를 넣지 않았으면(저장소를 막 만들었거나 포크했을 때) 건너뛴다 → 빨간 실패 표시가 생기지 않는다
+    if: ${{ vars.DOCKERHUB_USERNAME != '' }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:                 # 아래 4가지를 동시에 실행한다 (작업 4개가 나란히 돈다)
+        include:
+          - image: msa-user-service
+            context: backend
+            service: user-service
+          - image: msa-post-service
+            context: backend
+            service: post-service
+          - image: msa-api-gateway
+            context: backend
+            service: api-gateway
+          - image: msa-frontend
+            context: frontend
+            service: &quot;&quot;
+    steps:
+      - name: 소스 받기
+        uses: actions/checkout@v5
+
+      - name: Docker Buildx 준비
+        uses: docker/setup-buildx-action@v4
+
+      - name: Docker Hub 로그인
+        uses: docker/login-action@v4
+        with:
+          username: ${{ vars.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: 이미지 빌드 후 Docker Hub 에 올리기
+        uses: docker/build-push-action@v7
+        with:
+          context: ${{ matrix.context }}
+          build-args: SERVICE=${{ matrix.service }}
+          push: true
+          # latest(늘 최신) + 커밋 번호(어느 코드로 만든 이미지인지 남기기) 두 가지 이름을 붙인다
+          tags: |
+            ${{ vars.DOCKERHUB_USERNAME }}/${{ matrix.image }}:latest
+            ${{ vars.DOCKERHUB_USERNAME }}/${{ matrix.image }}:${{ github.sha }}
+          # 빌드 중간 결과를 GitHub 에 저장해 두고 다음 빌드에서 다시 쓴다 (두 번째부터 빨라진다)
+          cache-from: type=gha,scope=${{ matrix.image }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.image }}
+
+  # ---------------------------------------------------------------- ② EC2 배포
+  deploy:
+    needs: build              # ① 이 4개 모두 성공해야 시작한다
+    if: ${{ vars.EC2_HOST != '' }}   # EC2 를 아직 만들지 않았으면 배포는 건너뛴다 (이미지만 올린다)
+    runs-on: ubuntu-latest
+    env:
+      SSH_HOST: ${{ vars.EC2_HOST }}
+      SSH_USER: ${{ vars.EC2_USER }}
+    steps:
+      - name: 소스 받기 (서버에 보낼 compose 파일, init.sql)
+        uses: actions/checkout@v5
+
+      - name: SSH 키 준비
+        run: |
+          mkdir -p ~/.ssh
+          echo &quot;${{ secrets.EC2_SSH_KEY }}&quot; &gt; ~/.ssh/ec2.pem
+          chmod 600 ~/.ssh/ec2.pem
+          # 서버의 지문(host key)을 미리 등록해 &quot;정말 접속할까요? (yes/no)&quot; 질문을 없앤다
+          ssh-keyscan -H &quot;$SSH_HOST&quot; &gt;&gt; ~/.ssh/known_hosts
+
+      - name: 서버에 보낼 .env 만들기 (비밀 값은 Secrets 에서)
+        run: |
+          cat &gt; .env &lt;&lt;EOF
+          DOCKERHUB_USERNAME=${{ vars.DOCKERHUB_USERNAME }}
+          DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+          JWT_SECRET=${{ secrets.JWT_SECRET }}
+          EOF
+
+      - name: 파일 복사 (compose, .env, init.sql)
+        run: |
+          ssh -i ~/.ssh/ec2.pem &quot;$SSH_USER@$SSH_HOST&quot; &quot;mkdir -p ~/app/db&quot;
+          scp -i ~/.ssh/ec2.pem deploy/docker-compose.prod.yml &quot;$SSH_USER@$SSH_HOST:~/app/docker-compose.yml&quot;
+          scp -i ~/.ssh/ec2.pem .env &quot;$SSH_USER@$SSH_HOST:~/app/.env&quot;
+          scp -i ~/.ssh/ec2.pem db/init.sql &quot;$SSH_USER@$SSH_HOST:~/app/db/init.sql&quot;
+
+      - name: 새 이미지 받아서 다시 켜기
+        run: |
+          ssh -i ~/.ssh/ec2.pem &quot;$SSH_USER@$SSH_HOST&quot; &quot;cd ~/app &amp;&amp; docker compose pull &amp;&amp; docker compose up -d &amp;&amp; docker image prune -f&quot;
+
+      # ---------------------------------------------------------------- ③ 확인
+      - name: 배포 확인 (최대 3분 기다림)
+        run: |
+          for i in $(seq 1 36); do
+            code=$(curl -s -o /dev/null -w &quot;%{http_code}&quot; &quot;http://$SSH_HOST/api/posts&quot; || true)
+            echo &quot;$i 번째 확인: $code&quot;
+            if [ &quot;$code&quot; = &quot;200&quot; ]; then echo &quot;배포 성공! http://$SSH_HOST&quot;; exit 0; fi
+            sleep 5
+          done
+          echo &quot;3분 안에 응답이 없습니다. 서버에서 docker compose logs 를 확인하세요.&quot;
+          exit 1
+</code></pre>
+<p>위에서부터 끊어 읽자.</p>
+<p><strong><code>on:</code> - 언제 도나</strong></p>
+<ul>
+<li><code>push: branches: [main]</code> : main 에 push 하면 돈다.</li>
+<li><code>workflow_dispatch:</code> : Actions 화면의 <strong>Run workflow</strong> 단추로 손으로 돌릴 수도 있다. (코드는 그대로인데 다시 배포하고 싶을 때, 7장)</li>
+</ul>
+<p><strong><code>build</code> 잡 - 이미지 4개를 동시에</strong></p>
+<ul>
+<li><code>if: ${{ vars.DOCKERHUB_USERNAME != '' }}</code> : Variables 를 아직 안 넣었으면 건너뛴다. 저장소를 막 Fork 했을 때 빨간 실패 표시 대신 회색 "건너뜀" 이 된다.</li>
+<li><code>strategy: matrix: include:</code> : 아래 4가지 값으로 <strong>같은 잡을 4번, 동시에</strong> 돌린다. 스텝 안의 <code>${{ matrix.image }}</code> 같은 곳이 차례로 바뀐다. 2장의 compose 파일에서 서비스마다 적었던 <code>context</code>, <code>SERVICE</code> 와 똑같은 값이다.</li>
+<li>스텝 4개는 순서대로 <strong>소스 받기 → Buildx 준비 → Docker Hub 로그인 → 빌드하고 올리기</strong> 다. 3장에서 손으로 한 <code>docker login</code>, <code>docker compose build</code>, <code>push</code> 와 같다.</li>
+<li><code>tags:</code> 에 <code>latest</code> 와 <code>${{ github.sha }}</code>(커밋 번호) 두 이름을 붙인다. 서버는 <code>latest</code> 를 받고, 커밋 번호 태그는 "이 이미지가 어느 코드로 만들어졌나" 를 남긴다. 문제가 생기면 예전 커밋의 이미지로 되돌릴 수 있다(8장).</li>
+<li><code>cache-from / cache-to: type=gha</code> : 2장의 Docker 캐시를 GitHub 에 저장해 두고 다음 빌드에서 다시 쓴다. 첫 빌드는 3분쯤, 그다음부터는 소스만 바뀌면 1분 안쪽으로 줄어든다.</li>
+</ul>
+<h2 id="6-4-워크플로-읽기-②---deploy-잡">6-4. 워크플로 읽기 ② - deploy 잡</h2>
+<p><strong><code>needs: build</code></strong> : build 4개가 <strong>모두 성공해야</strong> 시작한다. 하나라도 실패하면 서버는 건드리지 않는다. 반쯤 바뀐 서버가 생기지 않게 막는 장치다.</p>
+<p><strong><code>if: ${{ vars.EC2_HOST != '' }}</code></strong> : EC2 를 아직 만들지 않았으면 이미지만 올리고 배포는 건너뛴다.</p>
+<p>스텝을 5장과 짝지어 보면 이렇다.</p>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>deploy 잡의 스텝</th>
+<th>5장에서 손으로 한 일</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>SSH 키 준비 - Secret 을 <code>~/.ssh/ec2.pem</code> 에 쓰고 <code>chmod 600</code></td>
+<td><code>.pem</code> 내려받기, <code>icacls</code> 로 권한 좁히기</td>
+</tr>
+<tr>
+<td>SSH 키 준비 - <code>ssh-keyscan</code> 으로 서버 지문 등록</td>
+<td>처음 접속할 때 <code>yes</code> 치기</td>
+</tr>
+<tr>
+<td>서버에 보낼 <code>.env</code> 만들기 (Variables + Secrets)</td>
+<td><code>server.env</code> 만들기</td>
+</tr>
+<tr>
+<td>파일 복사 - <code>ssh mkdir</code>, <code>scp</code> 3번</td>
+<td>똑같다</td>
+</tr>
+<tr>
+<td>새 이미지 받아서 다시 켜기 - <code>pull &amp;&amp; up -d &amp;&amp; image prune -f</code></td>
+<td><code>docker compose pull</code>, <code>up -d</code></td>
+</tr>
+<tr>
+<td>배포 확인 - <code>/api/posts</code> 가 200 이 될 때까지 5초마다</td>
+<td>브라우저로 열어 보기, 502 면 기다리기</td>
+</tr>
+</tbody>
+</table></div>
+<p>두 가지만 더 보자.</p>
+<ul>
+<li><strong><code>docker compose up -d</code></strong> 는 <strong>이미지가 바뀐 컨테이너만</strong> 새로 만든다. db 처럼 그대로인 컨테이너는 건드리지 않는다. 볼륨(<code>db_data</code>)도 그대로라 <strong>글과 회원은 남는다.</strong></li>
+<li><strong><code>docker image prune -f</code></strong> 는 새 이미지에 이름(<code>latest</code>)을 넘겨주고 이름 없이 남은 옛 이미지를 지운다. 배포할 때마다 590MB 씩 쌓여 디스크가 차는 것을 막는다.</li>
+</ul>
+<blockquote class="note">
+<p><strong>[배포 개념] 배포 확인까지가 배포다.</strong> <code>up -d</code> 는 "컨테이너를 켰다" 일 뿐, Spring 이 다 켜졌는지는 모른다. 마지막 스텝이 실제 주소로 요청을 보내 200 을 받아야 초록색 성공이 된다. 3분 안에 200 이 오지 않으면 빨간 실패로 알려 준다.</p>
+</blockquote>
+<h2 id="6-5-첫-실행">6-5. 첫 실행</h2>
+<p>Variables 와 Secrets 를 다 넣었으면 워크플로를 돌려 보자. 아직 코드를 고치지 않았으니 <strong>Run workflow</strong> 단추로 손으로 돌린다. (7장에서 push 로 돌린다)</p>
+<p>저장소 → <strong>Actions</strong> → 왼쪽 <strong>deploy</strong> → 오른쪽 <strong>Run workflow</strong> → 브랜치 <code>main</code> → <strong>Run workflow</strong>.</p>
+<figure><a href="../images/g03_run_dispatch.jpg" target="_blank"><img src="../images/g03_run_dispatch.jpg" alt="Run workflow - main 브랜치로 손으로 실행" loading="lazy"></a><figcaption>Run workflow - main 브랜치로 손으로 실행</figcaption></figure>
+<p>잠시 뒤 목록 맨 위에 새 실행이 생긴다. 눌러 들어가면 build 4개가 동시에 돌고, 다 끝나면 deploy 가 이어진다.</p>
+<figure><a href="../images/g01_run_progress.jpg" target="_blank"><img src="../images/g01_run_progress.jpg" alt="실행 중인 워크플로 - Matrix: build 4개가 끝나야 deploy 가 시작한다" loading="lazy"></a><figcaption>실행 중인 워크플로 - Matrix: build 4개가 끝나야 deploy 가 시작한다</figcaption></figure>
+<figure><a href="../images/g04_run_success.jpg" target="_blank"><img src="../images/g04_run_success.jpg" alt="성공 - build 4개와 deploy 모두 초록색. 전체 약 2분" loading="lazy"></a><figcaption>성공 - build 4개와 deploy 모두 초록색. 전체 약 2분</figcaption></figure>
+<p><strong>deploy</strong> 잡을 눌러 마지막 스텝 <strong>배포 확인</strong> 을 펼쳐 보자.</p>
+<figure><a href="../images/g05_deploy_log.jpg" target="_blank"><img src="../images/g05_deploy_log.jpg" alt="배포 확인 로그 - 502, 503 으로 기다리다 200 이 되면 성공" loading="lazy"></a><figcaption>배포 확인 로그 - 502, 503 으로 기다리다 200 이 되면 성공</figcaption></figure>
+<pre><code class="language-text">1 번째 확인: 502
+2 번째 확인: 502
+3 번째 확인: 502
+4 번째 확인: 503
+5 번째 확인: 200
+배포 성공! http://3.35.37.211
+</code></pre>
+<ul>
+<li><strong>502</strong> : nginx 는 켜졌는데 api-gateway 가 아직 켜지는 중이다.</li>
+<li><strong>503</strong> : 게이트웨이는 켜졌는데 뒤의 서비스(post-service)가 아직 준비 중이다.</li>
+<li><strong>200</strong> : 모두 켜졌다.</li>
+</ul>
+<p>이 숫자가 바뀌어 가는 모습이 1GB 서버에서 Spring 서비스 3개가 하나씩 깨어나는 과정이다.</p>
+<blockquote class="note">
+<p><strong>교안을 만들 때 겪은 실패</strong> - 처음 실행은 build 가 <code>insufficient scopes</code> 로 실패했다. Docker Hub 토큰을 Read-only 로 만들었기 때문이다(3장). 토큰을 Read &amp; Write 로 새로 만들어 <code>DOCKERHUB_TOKEN</code> 을 고친(Update) 뒤 다시 돌려 성공했다. 실패한 실행은 그 화면의 <strong>Re-run all jobs</strong> 로 다시 돌릴 수 있다.</p>
+</blockquote>
+<h2 id="확인-문제">확인 문제</h2>
+<ol>
+<li>Variables 와 Secrets 는 어떻게 다른가? <code>EC2_HOST</code> 를 Variables 에 둔 까닭은?</li>
+<li>build 잡 4개 중 frontend 만 실패하면 deploy 잡은 어떻게 되나?</li>
+<li>배포 확인 로그의 502 와 503 은 각각 무엇을 뜻하나?</li>
+<li><code>DB_PASSWORD</code> Secret 을 5장에서 쓴 값과 다르게 넣으면 어떤 일이 생기나?</li>
+</ol>
+<nav class="pager"><a href="ch05.html"><small>← 이전</small>5장 서버 준비와 첫 배포</a><a class="next" href="ch07.html"><small>다음 →</small>7장 자동 배포 확인 - push 하면 서버가 바뀐다</a></nav>
+</article></div>
+<footer>React + Spring MSA 배포 실습 - Docker · AWS EC2 · GitHub Actions · 배포 · 강사 김대철 · <a href="https://github.com/sinaboro/react-spring-msa-deploy">GitHub</a></footer>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css" media="(prefers-color-scheme: light)">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css" media="(prefers-color-scheme: dark)">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/powershell.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/dockerfile.min.js"></script>
+<script>
+document.querySelectorAll('pre code').forEach(function(el){
+  if(window.hljs && !/language-(text|plaintext)/.test(el.className)){ try{ hljs.highlightElement(el); }catch(e){} }
+  var b=document.createElement('button'); b.className='copy'; b.textContent='복사';
+  b.onclick=function(){                       // 코드 상자의 글자를 그대로 클립보드에 복사
+    navigator.clipboard.writeText(el.innerText).then(function(){
+      b.textContent='복사됨'; b.classList.add('ok');
+      setTimeout(function(){ b.textContent='복사'; b.classList.remove('ok'); },1500);
+    });
+  };
+  el.parentNode.appendChild(b);
+});
+</script>
+</body></html>

@@ -1,0 +1,274 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>8장. 정리와 삭제 - 요금이 나가지 않게 - 배포</title>
+<meta name="description" content="[react-spring-mas-postgresql](https://github.com/sinaboro/react-spring-mas-postgresql) 기초 과정의 MSA 로그인 게시판을 Docker 이미지로 만들어 Docker Hub 에 올리고, AWS EC2 에 배포한 뒤, push 하면 자동으로 배포되게(CI/CD) 하는 교안과 실습 코드입니다.">
+<meta property="og:title" content="8장. 정리와 삭제 - 요금이 나가지 않게 - 배포"><meta property="og:description" content="[react-spring-mas-postgresql](https://github.com/sinaboro/react-spring-mas-postgresql) 기초 과정의 MSA 로그인 게시판을 Docker 이미지로 만들어 Docker Hub 에 올리고, AWS EC2 에 배포한 뒤, push 하면 자동으로 배포되게(CI/CD) 하는 교안과 실습 코드입니다."><meta property="og:image" content="https://sinaboro.github.io/react-spring-msa-deploy/images/fig_deploy_overview.png">
+<meta property="og:type" content="website">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-12 -12 24 24'%3E%3Cg fill='none' stroke='%2361dafb' stroke-width='1.6'%3E%3Cellipse rx='10' ry='4'/%3E%3Cellipse rx='10' ry='4' transform='rotate(60)'/%3E%3Cellipse rx='10' ry='4' transform='rotate(120)'/%3E%3C/g%3E%3Ccircle r='2' fill='%2361dafb'/%3E%3C/svg%3E">
+<script>
+if(/KAKAOTALK/i.test(navigator.userAgent)){location.href='kakaotalk://web/openExternal?url='+encodeURIComponent(location.href);}
+</script>
+<style>
+:root{--ink:#1f2328;--sub:#59636e;--line:#e3e6ea;--bg:#f7f8fa;--card:#fff;--navy:#16202e;--acc:#61dafb;--acc2:#0b7fab;
+--note:#eef8fc;--noteline:#61dafb;--code:#f3f5f7;--link:#0969da}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--ink:#e6edf3;--sub:#9da7b3;--line:#30363d;--bg:#0f141a;
+--card:#161b22;--navy:#0b1017;--note:#10232b;--noteline:#2a8fb0;--code:#1b222b;--link:#58a6ff;--acc2:#61dafb}}
+*{box-sizing:border-box}html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.75 "Pretendard","Malgun Gothic","Apple SD Gothic Neo",sans-serif;word-break:keep-all}
+a{color:var(--link)}img{max-width:100%;height:auto}
+header.top{background:var(--navy);color:#fff;position:sticky;top:0;z-index:5}
+header.top .in{max-width:1180px;margin:0 auto;padding:10px 16px;display:flex;gap:10px;align-items:center}
+header.top a{color:#fff;text-decoration:none}.logo{font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.logo b{color:var(--acc)}
+header.top .sp{flex:1}header.top .btn{font-size:14px;border:1px solid #ffffff55;border-radius:8px;padding:4px 10px;white-space:nowrap}
+.wrap{max-width:1180px;margin:0 auto;padding:0 16px}
+.doc{display:grid;grid-template-columns:250px minmax(0,1fr);gap:32px;padding:24px 16px 60px;max-width:1180px;margin:0 auto}
+.side{position:sticky;top:64px;align-self:start;max-height:calc(100vh - 80px);overflow:auto;font-size:14px}
+.side .cap{font-weight:800;margin:4px 10px 6px;color:var(--sub)}
+.side a{display:block;padding:5px 10px;border-radius:6px;color:var(--ink);text-decoration:none;line-height:1.45}
+.side a.on{background:var(--acc);color:#111;font-weight:700}.side a:hover:not(.on){background:var(--line)}
+.side .other{margin-top:14px;border-top:1px solid var(--line);padding-top:10px}
+article{min-width:0}
+article h1{font-size:28px;line-height:1.35;margin:0 0 20px;padding-bottom:12px;border-bottom:4px solid var(--acc)}
+article h2{font-size:22px;margin:40px 0 12px;padding-left:10px;border-left:5px solid var(--acc2)}
+article h3{font-size:18px;margin:28px 0 8px}
+figure{margin:18px 0;text-align:center}figure img{border:1px solid var(--line);border-radius:8px;background:#fff}
+figcaption{font-size:13px;color:var(--sub);margin-top:6px}
+.tbl{overflow-x:auto;margin:14px 0}table{border-collapse:collapse;width:100%;font-size:15px}
+th{background:var(--navy);color:#fff;text-align:left}th,td{padding:7px 10px;border:1px solid var(--line);vertical-align:top}
+blockquote.note{margin:16px 0;padding:10px 16px;background:var(--note);border-left:5px solid var(--noteline);border-radius:6px}
+blockquote.note p{margin:6px 0}
+code{background:var(--code);padding:1px 5px;border-radius:4px;font-family:Consolas,"D2Coding",monospace;font-size:.92em}
+.file{display:flex;justify-content:space-between;gap:10px;align-items:center;margin:18px 0 -6px;padding:6px 12px;
+background:var(--navy);color:#dfe6ee;border-radius:8px 8px 0 0;font:13px Consolas,monospace}
+.file a{color:var(--acc);font-family:inherit;white-space:nowrap}.file span{overflow-wrap:anywhere}
+.file+pre{border-top-left-radius:0;border-top-right-radius:0;margin-top:6px}
+pre{position:relative;background:var(--code);padding:34px 14px 12px;border-radius:8px;overflow-x:auto;border:1px solid var(--line)}
+pre code{background:none;padding:0;font-size:14px;line-height:1.55}
+pre code.hljs{padding:0;background:none}
+.copy{position:absolute;top:6px;right:6px;font-size:12px;padding:3px 9px;border-radius:6px;border:1px solid var(--line);
+background:var(--card);color:var(--ink);cursor:pointer;opacity:.85}.copy:hover{opacity:1}.copy.ok{background:#2da44e;color:#fff;border-color:#2da44e}
+.pager{display:flex;gap:12px;justify-content:space-between;margin-top:48px;padding-top:20px;border-top:1px solid var(--line)}
+.pager a{flex:1;padding:12px 14px;border:1px solid var(--line);border-radius:10px;text-decoration:none;color:var(--ink);background:var(--card)}
+.pager a small{display:block;color:var(--sub)}.pager .next{text-align:right}
+select.jump{display:none;width:100%;font-size:16px;padding:8px;margin-bottom:12px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--ink)}
+@media (max-width:860px){.doc{display:block;padding-top:16px}.side{display:none}select.jump{display:block}article h1{font-size:23px}
+header.top .hide-s{display:none}}
+.hero{background:var(--navy);color:#fff;padding:44px 0 36px}
+.hero h1{font-size:38px;margin:0 0 10px;line-height:1.25}.hero h1 b{color:var(--acc)}
+.hero p{margin:6px 0;color:#c9d4e0;max-width:760px}.hero .cta{display:flex;flex-wrap:wrap;gap:10px;margin-top:22px}
+.cta a{padding:11px 18px;border-radius:10px;text-decoration:none;font-weight:700}
+.cta .main{background:var(--acc);color:#111}.cta .sub{border:1px solid #ffffff66;color:#fff}
+.hero .twin{margin-top:16px;font-size:14px}.hero .twin a{color:var(--acc)}
+section{padding:36px 0 8px}section h2{font-size:24px;margin:0 0 6px}section .lead{color:var(--sub);margin:0 0 18px}
+.course{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:22px}
+.course>div{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px}
+.course h3{margin:0 0 4px;font-size:21px}.course .pdf{font-size:14px}
+.course ol{list-style:none;padding:0;margin:12px 0 0}
+.course li a{display:flex;gap:10px;align-items:center;padding:6px 8px;border-radius:8px;text-decoration:none;color:var(--ink)}
+.course li a:hover{background:var(--line)}
+.course li img{width:72px;height:44px;object-fit:cover;object-position:left top;border:1px solid var(--line);border-radius:5px;background:#fff;flex:none}
+.course li .noimg{width:72px;height:44px;border-radius:5px;background:var(--code);flex:none}
+.dl{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px}
+.dl a{display:block;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 14px;text-decoration:none;color:var(--ink)}
+.dl a:hover{border-color:var(--acc)}.dl b{font-family:Consolas,monospace}.dl small{display:block;color:var(--sub)}
+footer{padding:40px 0 50px;color:var(--sub);font-size:14px;text-align:center}
+@media (max-width:600px){.hero h1{font-size:28px}.course{grid-template-columns:1fr}}
+
+.overview{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px}
+.overview img{border:none}
+.course .lead2{color:var(--sub);font-size:14px;margin:2px 0 6px}
+</style></head><body>
+<header class="top"><div class="in">
+<a class="logo" href="../index.html">React + Spring <b>배포</b></a><span class="sp"></span>
+<a class="btn hide-s" href="../guide/ch00.html">교안</a>
+<a class="btn" href="../index.html#pdf">PDF</a>
+<a class="btn" href="https://github.com/sinaboro/react-spring-msa-deploy" target="_blank">GitHub</a>
+</div></header>
+<div class="doc">
+<nav class="side"><div class="cap">배포</div><a href="ch00.html">0장 과정 안내</a><a href="ch01.html">1장 배포를 위해 바꾼 코드</a><a href="ch02.html">2장 Docker 이미지 만들기</a><a href="ch03.html">3장 Docker Hub 에 이미지 올리기</a><a href="ch04.html">4장 AWS EC2 만들기</a><a href="ch05.html">5장 서버 준비와 첫 배포</a><a href="ch06.html">6장 GitHub Actions - 비밀 값 넣기와 워크플로 읽기</a><a href="ch07.html">7장 자동 배포 확인 - push 하면 서버가 바뀐다</a><a href="ch08.html" class=on>8장 정리와 삭제 - 요금이 나가지 않게</a><a href="appA.html">부록 A 오류 해결</a><a href="appB.html">부록 B 확인 문제 풀이</a><div class="other"><a href="../index.html">← 첫 화면</a><a href="../React_Spring_MSA_%EB%B0%B0%ED%8F%AC_%ED%95%99%EC%8A%B5%EA%B5%90%EC%95%88.pdf" target="_blank">PDF 교안</a></div></nav>
+<article>
+<select class="jump" onchange="location.href=this.value" aria-label="장 이동"><option value="ch00.html">0장 과정 안내</option><option value="ch01.html">1장 배포를 위해 바꾼 코드</option><option value="ch02.html">2장 Docker 이미지 만들기</option><option value="ch03.html">3장 Docker Hub 에 이미지 올리기</option><option value="ch04.html">4장 AWS EC2 만들기</option><option value="ch05.html">5장 서버 준비와 첫 배포</option><option value="ch06.html">6장 GitHub Actions - 비밀 값 넣기와 워크플로 읽기</option><option value="ch07.html">7장 자동 배포 확인 - push 하면 서버가 바뀐다</option><option value="ch08.html" selected>8장 정리와 삭제 - 요금이 나가지 않게</option><option value="appA.html">부록 A 오류 해결</option><option value="appB.html">부록 B 확인 문제 풀이</option></select>
+<h1 id="8장-정리와-삭제---요금이-나가지-않게">8장. 정리와 삭제 - 요금이 나가지 않게</h1>
+<h2 id="학습-목표">학습 목표</h2>
+<ul>
+<li>지금까지 만든 배포 흐름을 한 장으로 정리한다.</li>
+<li>실습이 끝나면 <strong>EC2, 키 페어, 보안 그룹, 토큰, 열쇠 파일</strong>을 빠짐없이 지운다.</li>
+<li>실제 서비스로 가려면 무엇을 더해야 하는지 안다.</li>
+</ul>
+<h2 id="8-1-한눈에-정리">8-1. 한눈에 정리</h2>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>단계</th>
+<th>한 일</th>
+<th>핵심 파일·설정</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1장</td>
+<td>주소를 <code>/api</code> 로, 비밀 값은 환경 변수로</td>
+<td><code>api.js</code>, <code>nginx.conf</code>, <code>vite.config.js</code>, <code>application.yml</code></td>
+</tr>
+<tr>
+<td>2장</td>
+<td>서비스 4개를 이미지로, 내 PC 에서 운영처럼 실행</td>
+<td><code>backend/Dockerfile</code>, <code>frontend/Dockerfile</code>, <code>docker-compose.yml</code></td>
+</tr>
+<tr>
+<td>3장</td>
+<td>이미지를 Docker Hub 에 (토큰은 Read &amp; Write)</td>
+<td><code>docker login</code>, <code>docker compose push</code></td>
+</tr>
+<tr>
+<td>4장</td>
+<td>서울 리전 t3.micro Ubuntu, 22·80 만 열기</td>
+<td>키 페어 <code>.pem</code>, 보안 그룹</td>
+</tr>
+<tr>
+<td>5장</td>
+<td>스왑·Docker 설치, 손으로 첫 배포</td>
+<td><code>deploy/docker-compose.prod.yml</code>, <code>.env</code></td>
+</tr>
+<tr>
+<td>6장</td>
+<td>Variables 3개, Secrets 4개, 워크플로 읽기</td>
+<td><code>.github/workflows/deploy.yml</code></td>
+</tr>
+<tr>
+<td>7장</td>
+<td>push → 자동 배포, IP 가 바뀌면 <code>EC2_HOST</code> 고치기</td>
+<td>Actions 탭, Run workflow</td>
+</tr>
+</tbody>
+</table></div>
+<blockquote class="note">
+<p><strong>[배포 개념] 이 교안의 배포를 한 문장으로</strong> - "코드는 GitHub 에, 이미지는 Docker Hub 에, 비밀 값은 Secrets 와 서버 <code>.env</code> 에, 실행은 EC2 의 docker compose 가" 맡고, 그 사이를 GitHub Actions 가 잇는다.</p>
+</blockquote>
+<h2 id="8-2-지우기---이-순서대로">8-2. 지우기 - 이 순서대로</h2>
+<p>EC2 는 <strong>켜 둔 시간만큼</strong> 요금이 붙는다. 실습이 끝나면 아래 순서대로 지운다. 앞의 것을 지워야 뒤의 것이 지워지는 경우가 있으니 순서를 지킨다.</p>
+<p><strong>① EC2 인스턴스 종료(삭제)</strong></p>
+<p>EC2 → <strong>인스턴스</strong> → <code>msa-deploy-server</code> 체크 → 위쪽 <strong>인스턴스 상태</strong> → <strong>인스턴스 종료(삭제)</strong> → 확인.</p>
+<ul>
+<li>상태가 "종료 중" → "종료됨" 으로 바뀐다. 종료됨 인스턴스는 한 시간쯤 목록에 남았다가 사라진다.</li>
+<li>디스크(EBS 20GiB)는 "종료 시 삭제" 가 기본값이라 함께 지워진다. <strong>글·회원 데이터도 모두 사라진다.</strong> 되돌릴 수 없다.</li>
+<li>"중지" 와 헷갈리지 않는다. 중지는 디스크 요금이 계속 나간다.</li>
+</ul>
+<p><strong>② 키 페어 삭제</strong></p>
+<p>EC2 → 왼쪽 <strong>네트워크 및 보안</strong> → <strong>키 페어</strong> → <code>msa-deploy-key</code> 체크 → <strong>작업</strong> → <strong>삭제</strong>. AWS 에 있는 자물쇠(공개 키)가 지워진다.</p>
+<p><strong>③ 보안 그룹 삭제</strong></p>
+<p>EC2 → <strong>보안 그룹</strong> → <code>launch-wizard-1</code> 체크 → <strong>작업</strong> → <strong>보안 그룹 삭제</strong>. 인스턴스가 완전히 종료돼야 지워진다. "연결된 인스턴스가 있다" 고 나오면 몇 분 뒤에 다시 한다. (<code>default</code> 보안 그룹은 지우지 않는다. 지울 수도 없다)</p>
+<p><strong>④ 탄력적 IP (만들었다면)</strong></p>
+<p>EC2 → <strong>탄력적 IP</strong> → 체크 → <strong>작업</strong> → <strong>탄력적 IP 주소 릴리스</strong>. 이 교안대로 했다면 만들지 않았으니 목록이 비어 있다.</p>
+<p><strong>⑤ GitHub 저장소 정리</strong></p>
+<ul>
+<li>Settings → Secrets and variables → Actions → <strong>Variables</strong> 의 <code>EC2_HOST</code> 삭제. 이제 push 해도 deploy 잡은 건너뛴다(이미지 빌드만 한다).</li>
+<li><strong>Secrets</strong> 의 <code>EC2_SSH_KEY</code> 삭제. 없어진 서버의 열쇠라 쓸모가 없다.</li>
+<li>이미지 빌드도 멈추려면 <code>DOCKERHUB_USERNAME</code> 도 지운다(build 잡도 건너뜀).</li>
+</ul>
+<p><strong>⑥ Docker Hub 정리</strong></p>
+<ul>
+<li>Account settings → <strong>Personal access tokens</strong> → <code>msa-deploy</code> 토큰 <strong>Delete</strong>. GitHub Secrets 의 <code>DOCKERHUB_TOKEN</code> 도 지운다.</li>
+<li>공개 저장소(이미지)는 남겨 두어도 요금이 없다. 지우려면 저장소 → <strong>Settings</strong> → <strong>Delete repository</strong>.</li>
+</ul>
+<p><strong>⑦ 내 PC 정리</strong></p>
+<p><strong>[PS]</strong> 열쇠 파일과 서버용 .env 지우기</p>
+<pre><code class="language-powershell">Remove-Item &quot;$env:USERPROFILE\Desktop\공부자료\msa-deploy-key.pem&quot;
+Remove-Item server.env -ErrorAction SilentlyContinue
+docker compose down -v          # 2장에서 켠 내 PC 의 컨테이너와 데이터
+</code></pre>
+<p><strong>⑧ 요금 확인</strong></p>
+<p>AWS 콘솔 오른쪽 위 계정 이름 → <strong>결제 및 비용 관리</strong> → 이번 달 요금을 본다. 지운 뒤 하루쯤 지나 0 에 가깝게 멈췄는지 한 번 더 확인하면 마음이 편하다.</p>
+<h2 id="8-3-실제-서비스로-가려면">8-3. 실제 서비스로 가려면</h2>
+<p>이 교안은 배포의 <strong>뼈대</strong>만 다뤘다. 실제로 사용자를 받으려면 다음을 더한다.</p>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>더할 것</th>
+<th>까닭</th>
+<th>쓰는 것 (예)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>도메인 + HTTPS</td>
+<td>IP 대신 이름으로, 로그인 토큰이 오가는 길을 암호화</td>
+<td>도메인 구입, Let's Encrypt(certbot), AWS ALB + ACM</td>
+</tr>
+<tr>
+<td>고정 IP</td>
+<td>중지·시작해도 주소 유지</td>
+<td>탄력적 IP</td>
+</tr>
+<tr>
+<td>관리형 DB</td>
+<td>백업·복구·장애 대비를 AWS 에 맡김</td>
+<td>Amazon RDS for PostgreSQL</td>
+</tr>
+<tr>
+<td>버전 태그로 배포·되돌리기</td>
+<td><code>latest</code> 대신 커밋 번호 태그로 배포하면, 문제 생길 때 예전 태그로 바로 되돌린다</td>
+<td>워크플로가 이미 붙이는 <code>:${{ github.sha }}</code> 태그</td>
+</tr>
+<tr>
+<td>비공개 이미지</td>
+<td>회사 코드는 공개하지 않는다</td>
+<td>Docker Hub 비공개 저장소, Amazon ECR</td>
+</tr>
+<tr>
+<td>테스트 단계</td>
+<td>깨진 코드가 배포되지 않게</td>
+<td>워크플로에 <code>./gradlew test</code>, <code>npm test</code> 잡 추가</td>
+</tr>
+<tr>
+<td>모니터링·로그</td>
+<td>서버가 죽은 것을 사용자보다 먼저 알기</td>
+<td>CloudWatch, 상태 확인 알림</td>
+</tr>
+<tr>
+<td>무중단 배포</td>
+<td>배포하는 1분 동안 502 가 보이지 않게</td>
+<td>컨테이너 2벌 번갈아 켜기, 로드 밸런서, Kubernetes</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>되돌리기 맛보기</strong> - 새 버전에 문제가 생겼다면, 서버의 compose 파일에서 <code>:latest</code> 를 예전 커밋 번호 태그로 바꾸고 <code>docker compose up -d</code> 하면 예전 이미지로 돌아간다. 커밋 번호는 GitHub 의 커밋 목록이나 Docker Hub 저장소의 <strong>Tags</strong> 탭에서 찾는다.</p>
+<p><strong>[EC2]</strong> 예: post-service 만 예전 버전으로 (<code>&lt;커밋번호&gt;</code> 는 40글자 전체)</p>
+<pre><code class="language-bash">cd ~/app
+sed -i 's#msa-post-service:latest#msa-post-service:&lt;커밋번호&gt;#' docker-compose.yml
+docker compose up -d post-service
+</code></pre>
+<blockquote class="note">
+<p>다음 자동 배포 때 워크플로가 compose 파일을 다시 덮어써서 <code>latest</code> 로 돌아온다. 그 전에 코드를 고쳐 push 하는 것이 정석이다.</p>
+</blockquote>
+<h2 id="확인-문제">확인 문제</h2>
+<ol>
+<li>인스턴스 "중지" 만 해 두면 요금이 0 이 되나?</li>
+<li>보안 그룹이 "연결된 인스턴스가 있어서" 지워지지 않는다. 무엇을 기다려야 하나?</li>
+<li>EC2 를 지운 뒤에도 GitHub Actions 가 실패하지 않게 하려면 무엇을 지우면 되나?</li>
+<li>커밋 번호 태그를 함께 붙여 두면 무엇이 좋은가?</li>
+</ol>
+<nav class="pager"><a href="ch07.html"><small>← 이전</small>7장 자동 배포 확인 - push 하면 서버가 바뀐다</a><a class="next" href="appA.html"><small>다음 →</small>부록 A 오류 해결</a></nav>
+</article></div>
+<footer>React + Spring MSA 배포 실습 - Docker · AWS EC2 · GitHub Actions · 배포 · 강사 김대철 · <a href="https://github.com/sinaboro/react-spring-msa-deploy">GitHub</a></footer>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css" media="(prefers-color-scheme: light)">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css" media="(prefers-color-scheme: dark)">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/powershell.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/dockerfile.min.js"></script>
+<script>
+document.querySelectorAll('pre code').forEach(function(el){
+  if(window.hljs && !/language-(text|plaintext)/.test(el.className)){ try{ hljs.highlightElement(el); }catch(e){} }
+  var b=document.createElement('button'); b.className='copy'; b.textContent='복사';
+  b.onclick=function(){                       // 코드 상자의 글자를 그대로 클립보드에 복사
+    navigator.clipboard.writeText(el.innerText).then(function(){
+      b.textContent='복사됨'; b.classList.add('ok');
+      setTimeout(function(){ b.textContent='복사'; b.classList.remove('ok'); },1500);
+    });
+  };
+  el.parentNode.appendChild(b);
+});
+</script>
+</body></html>

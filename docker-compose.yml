@@ -1,10 +1,12 @@
 # =====================================================================
 # docker-compose.yml - 내 PC 에서 "운영과 똑같이" 실행해 보기
 #
-#   docker compose up -d --build     이미지 5개를 만들고(빌드) 모두 켠다  → http://localhost
+#   docker compose up -d --build     이미지 4개를 만들고(빌드) DB 까지 5개를 켠다  → http://localhost
 #   docker compose ps                상태 확인
 #   docker compose logs -f post-service   한 서비스의 로그 보기 (Ctrl+C 로 빠져나옴)
 #   docker compose down              모두 끄기 (데이터는 남는다. -v 를 붙이면 데이터도 지운다)
+#
+# 이미지 이름의 앞부분은 .env 의 DOCKERHUB_USERNAME 이다 (.env.example 참고. 없으면 local/msa-...)
 #
 # 서버(EC2)에서는 이 파일 대신 deploy/docker-compose.prod.yml 을 쓴다.
 #   이 파일 : 소스로 이미지를 "빌드" 해서 실행
@@ -42,7 +44,7 @@ services:
       context: ./backend
       args:
         SERVICE: user-service                      # backend/Dockerfile 하나로 서비스마다 다른 이미지를 굽는다
-    image: rlaeocjf/msa-user-service:latest        # 빌드한 이미지의 이름 (Docker Hub 에 이 이름으로 올린다)
+    image: ${DOCKERHUB_USERNAME:-local}/msa-user-service:latest   # 이미지 이름. .env 의 DOCKERHUB_USERNAME (없으면 local)
     restart: unless-stopped
     environment:
       TZ: Asia/Seoul                              # 시간대를 한국으로 (없으면 UTC 라 글 작성 시각이 9시간 늦게 보인다)
@@ -59,7 +61,7 @@ services:
       context: ./backend
       args:
         SERVICE: post-service
-    image: rlaeocjf/msa-post-service:latest
+    image: ${DOCKERHUB_USERNAME:-local}/msa-post-service:latest
     restart: unless-stopped
     environment:
       TZ: Asia/Seoul                              # 시간대를 한국으로 (없으면 UTC 라 글 작성 시각이 9시간 늦게 보인다)
@@ -75,7 +77,7 @@ services:
       context: ./backend
       args:
         SERVICE: api-gateway
-    image: rlaeocjf/msa-api-gateway:latest
+    image: ${DOCKERHUB_USERNAME:-local}/msa-api-gateway:latest
     restart: unless-stopped
     environment:
       TZ: Asia/Seoul                              # 시간대를 한국으로 (없으면 UTC 라 글 작성 시각이 9시간 늦게 보인다)
@@ -89,7 +91,7 @@ services:
   # ---------- 화면 (React + nginx) - 바깥에 열린 유일한 문 ----------
   frontend:
     build: ./frontend
-    image: rlaeocjf/msa-frontend:latest
+    image: ${DOCKERHUB_USERNAME:-local}/msa-frontend:latest
     restart: unless-stopped
     ports:
       - "80:80"                                    # 내 PC(서버) 80 → nginx 80.  주소: http://localhost

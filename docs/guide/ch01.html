@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>1장. 배포를 위해 바꾼 코드 - 배포</title>
+<meta name="description" content="[react-spring-mas-postgresql](https://github.com/sinaboro/react-spring-mas-postgresql) 기초 과정의 MSA 로그인 게시판을 Docker 이미지로 만들어 Docker Hub 에 올리고, AWS EC2 에 배포한 뒤, push 하면 자동으로 배포되게(CI/CD) 하는 교안과 실습 코드입니다.">
+<meta property="og:title" content="1장. 배포를 위해 바꾼 코드 - 배포"><meta property="og:description" content="[react-spring-mas-postgresql](https://github.com/sinaboro/react-spring-mas-postgresql) 기초 과정의 MSA 로그인 게시판을 Docker 이미지로 만들어 Docker Hub 에 올리고, AWS EC2 에 배포한 뒤, push 하면 자동으로 배포되게(CI/CD) 하는 교안과 실습 코드입니다."><meta property="og:image" content="https://sinaboro.github.io/react-spring-msa-deploy/images/fig_deploy_overview.png">
+<meta property="og:type" content="website">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-12 -12 24 24'%3E%3Cg fill='none' stroke='%2361dafb' stroke-width='1.6'%3E%3Cellipse rx='10' ry='4'/%3E%3Cellipse rx='10' ry='4' transform='rotate(60)'/%3E%3Cellipse rx='10' ry='4' transform='rotate(120)'/%3E%3C/g%3E%3Ccircle r='2' fill='%2361dafb'/%3E%3C/svg%3E">
+<script>
+if(/KAKAOTALK/i.test(navigator.userAgent)){location.href='kakaotalk://web/openExternal?url='+encodeURIComponent(location.href);}
+</script>
+<style>
+:root{--ink:#1f2328;--sub:#59636e;--line:#e3e6ea;--bg:#f7f8fa;--card:#fff;--navy:#16202e;--acc:#61dafb;--acc2:#0b7fab;
+--note:#eef8fc;--noteline:#61dafb;--code:#f3f5f7;--link:#0969da}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--ink:#e6edf3;--sub:#9da7b3;--line:#30363d;--bg:#0f141a;
+--card:#161b22;--navy:#0b1017;--note:#10232b;--noteline:#2a8fb0;--code:#1b222b;--link:#58a6ff;--acc2:#61dafb}}
+*{box-sizing:border-box}html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.75 "Pretendard","Malgun Gothic","Apple SD Gothic Neo",sans-serif;word-break:keep-all}
+a{color:var(--link)}img{max-width:100%;height:auto}
+header.top{background:var(--navy);color:#fff;position:sticky;top:0;z-index:5}
+header.top .in{max-width:1180px;margin:0 auto;padding:10px 16px;display:flex;gap:10px;align-items:center}
+header.top a{color:#fff;text-decoration:none}.logo{font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.logo b{color:var(--acc)}
+header.top .sp{flex:1}header.top .btn{font-size:14px;border:1px solid #ffffff55;border-radius:8px;padding:4px 10px;white-space:nowrap}
+.wrap{max-width:1180px;margin:0 auto;padding:0 16px}
+.doc{display:grid;grid-template-columns:250px minmax(0,1fr);gap:32px;padding:24px 16px 60px;max-width:1180px;margin:0 auto}
+.side{position:sticky;top:64px;align-self:start;max-height:calc(100vh - 80px);overflow:auto;font-size:14px}
+.side .cap{font-weight:800;margin:4px 10px 6px;color:var(--sub)}
+.side a{display:block;padding:5px 10px;border-radius:6px;color:var(--ink);text-decoration:none;line-height:1.45}
+.side a.on{background:var(--acc);color:#111;font-weight:700}.side a:hover:not(.on){background:var(--line)}
+.side .other{margin-top:14px;border-top:1px solid var(--line);padding-top:10px}
+article{min-width:0}
+article h1{font-size:28px;line-height:1.35;margin:0 0 20px;padding-bottom:12px;border-bottom:4px solid var(--acc)}
+article h2{font-size:22px;margin:40px 0 12px;padding-left:10px;border-left:5px solid var(--acc2)}
+article h3{font-size:18px;margin:28px 0 8px}
+figure{margin:18px 0;text-align:center}figure img{border:1px solid var(--line);border-radius:8px;background:#fff}
+figcaption{font-size:13px;color:var(--sub);margin-top:6px}
+.tbl{overflow-x:auto;margin:14px 0}table{border-collapse:collapse;width:100%;font-size:15px}
+th{background:var(--navy);color:#fff;text-align:left}th,td{padding:7px 10px;border:1px solid var(--line);vertical-align:top}
+blockquote.note{margin:16px 0;padding:10px 16px;background:var(--note);border-left:5px solid var(--noteline);border-radius:6px}
+blockquote.note p{margin:6px 0}
+code{background:var(--code);padding:1px 5px;border-radius:4px;font-family:Consolas,"D2Coding",monospace;font-size:.92em}
+.file{display:flex;justify-content:space-between;gap:10px;align-items:center;margin:18px 0 -6px;padding:6px 12px;
+background:var(--navy);color:#dfe6ee;border-radius:8px 8px 0 0;font:13px Consolas,monospace}
+.file a{color:var(--acc);font-family:inherit;white-space:nowrap}.file span{overflow-wrap:anywhere}
+.file+pre{border-top-left-radius:0;border-top-right-radius:0;margin-top:6px}
+pre{position:relative;background:var(--code);padding:34px 14px 12px;border-radius:8px;overflow-x:auto;border:1px solid var(--line)}
+pre code{background:none;padding:0;font-size:14px;line-height:1.55}
+pre code.hljs{padding:0;background:none}
+.copy{position:absolute;top:6px;right:6px;font-size:12px;padding:3px 9px;border-radius:6px;border:1px solid var(--line);
+background:var(--card);color:var(--ink);cursor:pointer;opacity:.85}.copy:hover{opacity:1}.copy.ok{background:#2da44e;color:#fff;border-color:#2da44e}
+.pager{display:flex;gap:12px;justify-content:space-between;margin-top:48px;padding-top:20px;border-top:1px solid var(--line)}
+.pager a{flex:1;padding:12px 14px;border:1px solid var(--line);border-radius:10px;text-decoration:none;color:var(--ink);background:var(--card)}
+.pager a small{display:block;color:var(--sub)}.pager .next{text-align:right}
+select.jump{display:none;width:100%;font-size:16px;padding:8px;margin-bottom:12px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--ink)}
+@media (max-width:860px){.doc{display:block;padding-top:16px}.side{display:none}select.jump{display:block}article h1{font-size:23px}
+header.top .hide-s{display:none}}
+.hero{background:var(--navy);color:#fff;padding:44px 0 36px}
+.hero h1{font-size:38px;margin:0 0 10px;line-height:1.25}.hero h1 b{color:var(--acc)}
+.hero p{margin:6px 0;color:#c9d4e0;max-width:760px}.hero .cta{display:flex;flex-wrap:wrap;gap:10px;margin-top:22px}
+.cta a{padding:11px 18px;border-radius:10px;text-decoration:none;font-weight:700}
+.cta .main{background:var(--acc);color:#111}.cta .sub{border:1px solid #ffffff66;color:#fff}
+.hero .twin{margin-top:16px;font-size:14px}.hero .twin a{color:var(--acc)}
+section{padding:36px 0 8px}section h2{font-size:24px;margin:0 0 6px}section .lead{color:var(--sub);margin:0 0 18px}
+.course{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:22px}
+.course>div{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px}
+.course h3{margin:0 0 4px;font-size:21px}.course .pdf{font-size:14px}
+.course ol{list-style:none;padding:0;margin:12px 0 0}
+.course li a{display:flex;gap:10px;align-items:center;padding:6px 8px;border-radius:8px;text-decoration:none;color:var(--ink)}
+.course li a:hover{background:var(--line)}
+.course li img{width:72px;height:44px;object-fit:cover;object-position:left top;border:1px solid var(--line);border-radius:5px;background:#fff;flex:none}
+.course li .noimg{width:72px;height:44px;border-radius:5px;background:var(--code);flex:none}
+.dl{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px}
+.dl a{display:block;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 14px;text-decoration:none;color:var(--ink)}
+.dl a:hover{border-color:var(--acc)}.dl b{font-family:Consolas,monospace}.dl small{display:block;color:var(--sub)}
+footer{padding:40px 0 50px;color:var(--sub);font-size:14px;text-align:center}
+@media (max-width:600px){.hero h1{font-size:28px}.course{grid-template-columns:1fr}}
+
+.overview{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px}
+.overview img{border:none}
+.course .lead2{color:var(--sub);font-size:14px;margin:2px 0 6px}
+</style></head><body>
+<header class="top"><div class="in">
+<a class="logo" href="../index.html">React + Spring <b>배포</b></a><span class="sp"></span>
+<a class="btn hide-s" href="../guide/ch00.html">교안</a>
+<a class="btn" href="../index.html#pdf">PDF</a>
+<a class="btn" href="https://github.com/sinaboro/react-spring-msa-deploy" target="_blank">GitHub</a>
+</div></header>
+<div class="doc">
+<nav class="side"><div class="cap">배포</div><a href="ch00.html">0장 과정 안내</a><a href="ch01.html" class=on>1장 배포를 위해 바꾼 코드</a><a href="ch02.html">2장 Docker 이미지 만들기</a><a href="ch03.html">3장 Docker Hub 에 이미지 올리기</a><a href="ch04.html">4장 AWS EC2 만들기</a><a href="ch05.html">5장 서버 준비와 첫 배포</a><a href="ch06.html">6장 GitHub Actions - 비밀 값 넣기와 워크플로 읽기</a><a href="ch07.html">7장 자동 배포 확인 - push 하면 서버가 바뀐다</a><a href="ch08.html">8장 정리와 삭제 - 요금이 나가지 않게</a><a href="appA.html">부록 A 오류 해결</a><a href="appB.html">부록 B 확인 문제 풀이</a><div class="other"><a href="../index.html">← 첫 화면</a><a href="../React_Spring_MSA_%EB%B0%B0%ED%8F%AC_%ED%95%99%EC%8A%B5%EA%B5%90%EC%95%88.pdf" target="_blank">PDF 교안</a></div></nav>
+<article>
+<select class="jump" onchange="location.href=this.value" aria-label="장 이동"><option value="ch00.html">0장 과정 안내</option><option value="ch01.html" selected>1장 배포를 위해 바꾼 코드</option><option value="ch02.html">2장 Docker 이미지 만들기</option><option value="ch03.html">3장 Docker Hub 에 이미지 올리기</option><option value="ch04.html">4장 AWS EC2 만들기</option><option value="ch05.html">5장 서버 준비와 첫 배포</option><option value="ch06.html">6장 GitHub Actions - 비밀 값 넣기와 워크플로 읽기</option><option value="ch07.html">7장 자동 배포 확인 - push 하면 서버가 바뀐다</option><option value="ch08.html">8장 정리와 삭제 - 요금이 나가지 않게</option><option value="appA.html">부록 A 오류 해결</option><option value="appB.html">부록 B 확인 문제 풀이</option></select>
+<h1 id="1장-배포를-위해-바꾼-코드">1장. 배포를 위해 바꾼 코드</h1>
+<h2 id="학습-목표">학습 목표</h2>
+<ul>
+<li>서버에서는 왜 <code>http://localhost:8080</code> 을 쓸 수 없는지 설명한다.</li>
+<li><strong>nginx</strong> 가 "화면" 과 "API" 를 한 주소(80번)에서 나눠 주는 방법을 이해한다.</li>
+<li>비밀 값(DB 비밀번호, JWT 열쇠)을 코드에서 빼서 <strong>환경 변수</strong>로 넣는 까닭을 안다.</li>
+</ul>
+<h2 id="1-1-localhost-의-함정">1-1. localhost 의 함정</h2>
+<p>MSA 기초 과정의 React 는 API 를 이렇게 불렀다.</p>
+<pre><code class="language-javascript">export const API_URL = &quot;http://localhost:8080/api&quot;;
+</code></pre>
+<p>내 PC 에서는 아무 문제가 없었다. 브라우저도, 게이트웨이도 <strong>같은 PC</strong> 에 있었기 때문이다. 그런데 이 React 를 EC2 에 올리면 어떻게 될까?</p>
+<ol>
+<li>사용자가 집에서 <code>http://3.35.37.211</code> 에 접속한다. 화면(HTML·JS)은 EC2 에서 받아 온다.</li>
+<li>화면 속 자바스크립트는 <strong>사용자의 브라우저에서</strong> 실행된다.</li>
+<li>그 자바스크립트가 <code>http://localhost:8080/api/posts</code> 를 부른다. 여기서 <code>localhost</code> 는 <strong>사용자 자신의 PC</strong> 다.</li>
+<li>사용자 PC 에는 게이트웨이가 없다 → 연결 실패. 글 목록이 비어 보인다.</li>
+</ol>
+<blockquote class="note">
+<p><strong>[배포 개념] React 코드는 서버가 아니라 브라우저에서 돈다.</strong> 그래서 React 코드 안의 <code>localhost</code> 는 "서버" 가 아니라 "그 화면을 연 사람의 PC" 를 가리킨다. 배포할 때 가장 많이 하는 실수다.</p>
+</blockquote>
+<h2 id="1-2-해결-주소를-api-로-길-안내는-nginx-가">1-2. 해결: 주소를 <code>/api</code> 로, 길 안내는 nginx 가</h2>
+<p>이 저장소에서 React 코드는 <strong>딱 한 줄</strong> 바꿨다.</p>
+<pre><code class="language-javascript">// frontend/src/api.js (일부)
+export const API_URL = &quot;/api&quot;;
+</code></pre>
+<p><code>/api</code> 처럼 <code>http://</code> 없이 <code>/</code> 로 시작하면 브라우저는 <strong>"지금 이 화면을 받아 온 바로 그 서버"</strong> 에 요청한다. 화면을 <code>http://3.35.37.211</code> 에서 받았으면 <code>http://3.35.37.211/api/posts</code> 로 간다. 내 PC 에서 <code>http://localhost</code> 로 열었으면 <code>http://localhost/api/posts</code> 로 간다. 주소를 코드에 적지 않으니 <strong>어느 서버에 올려도 그대로</strong> 돈다.</p>
+<p>그럼 80번 포트로 들어온 <code>/api/...</code> 요청을 누가 게이트웨이(8080)로 넘겨줄까? <strong>nginx</strong> 다. frontend 이미지 안에서 React 빌드 결과를 내려주는 웹 서버이고, 다음 설정 파일 하나로 두 가지 일을 한다.</p>
+<div class="file"><span>📄 frontend/nginx.conf</span><a href="https://github.com/sinaboro/react-spring-msa-deploy/blob/main/frontend/nginx.conf" target="_blank">GitHub 에서 보기</a></div>
+
+<pre><code class="language-nginx"># nginx.conf - 운영 서버의 &quot;정문&quot; 설정 (frontend 이미지 안에 들어간다)
+#
+# 브라우저 ──▶ nginx (80번 포트, 바깥에 열린 유일한 문)
+#               ├─ /api/...  → api-gateway:8080 으로 넘긴다 (게이트웨이가 다시 user/post-service 로)
+#               └─ 그 밖     → React 빌드 결과(index.html, js, css)를 내려준다
+#
+# api-gateway, user-service, post-service, db 는 바깥에 포트를 열지 않는다.
+# 같은 도커 네트워크 안에서 &quot;서비스 이름&quot; (api-gateway) 으로만 찾아간다.
+
+server {
+    listen 80;
+
+    # React 빌드 결과가 있는 곳 (frontend/Dockerfile 에서 복사해 넣는다)
+    root /usr/share/nginx/html;
+    index index.html;
+
+    # 1) API 요청은 게이트웨이로
+    location /api/ {
+        proxy_pass http://api-gateway:8080;              # 도커 compose 의 서비스 이름으로 찾아간다
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+
+    # 2) 화면 요청은 React 로
+    #    /posts/3 처럼 React Router 가 쓰는 주소는 실제 파일이 없다.
+    #    그럴 때 index.html 을 주면 React Router 가 주소를 보고 맞는 화면을 그린다. (새로 고침해도 404 가 나지 않게)
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+}
+</code></pre>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>요청 주소</th>
+<th>nginx 가 하는 일</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>/</code> , <code>/assets/index-abc.js</code></td>
+<td>React 빌드 파일을 그대로 내려준다</td>
+</tr>
+<tr>
+<td><code>/posts/3</code> (파일이 없는 주소)</td>
+<td><code>index.html</code> 을 준다 → React Router 가 3번 글 화면을 그린다</td>
+</tr>
+<tr>
+<td><code>/api/posts</code></td>
+<td><code>http://api-gateway:8080/api/posts</code> 로 넘긴다 (프록시)</td>
+</tr>
+</tbody>
+</table></div>
+<blockquote class="note">
+<p><strong>[배포 개념] 리버스 프록시(reverse proxy)</strong> - 바깥 요청을 대신 받아서 안쪽 서버로 넘겨주는 문지기. 덕분에 바깥에는 80번 하나만 열고, 게이트웨이(8080)·서비스(8081, 8082)·DB(5432)는 <strong>인터넷에서 보이지 않게</strong> 숨길 수 있다.</p>
+<p><strong>CORS 걱정도 사라진다.</strong> 화면과 API 가 같은 주소(같은 출처)에서 오므로 브라우저가 CORS 검사를 하지 않는다. 게이트웨이의 CORS 설정은 개발할 때(5173 → 8080)만 쓰인다.</p>
+</blockquote>
+<h2 id="1-3-개발할-때는-vite-가-nginx-대신">1-3. 개발할 때는 Vite 가 nginx 대신</h2>
+<p><code>API_URL</code> 을 <code>/api</code> 로 바꾸면, 개발 서버(<code>npm run dev</code>, 5173)에서는 <code>http://localhost:5173/api/...</code> 로 요청이 간다. 5173 에는 게이트웨이가 없으므로 <strong>Vite 개발 서버가 nginx 의 일을 대신</strong> 하게 설정했다.</p>
+<div class="file"><span>📄 frontend/vite.config.js</span><a href="https://github.com/sinaboro/react-spring-msa-deploy/blob/main/frontend/vite.config.js" target="_blank">GitHub 에서 보기</a></div>
+
+<pre><code class="language-javascript">// vite.config.js - Vite(개발 서버·빌드 도구) 설정
+//   plugins: [react()] → .jsx 파일의 JSX 를 브라우저가 이해하는 자바스크립트로 바꿔 준다.
+//   개발 서버 주소는 기본값 http://localhost:5173
+//
+// [배포] server.proxy - 개발할 때(npm run dev)만 쓰이는 설정
+//   React 가 &quot;/api/posts&quot; 로 요청하면 Vite 개발 서버가 대신 http://localhost:8080/api/posts (게이트웨이)로 보낸다.
+//   운영(Docker)에서는 이 설정 대신 nginx 가 같은 일을 한다 (nginx.conf).
+//   → 개발과 운영에서 React 코드(api.js 의 API_URL = &quot;/api&quot;)가 똑같다.
+import react from '@vitejs/plugin-react'
+import { defineConfig } from 'vite'
+
+export default defineConfig({
+  plugins: [react()],
+  server: {
+    proxy: {
+      '/api': 'http://localhost:8080',
+    },
+  },
+})
+</code></pre>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th></th>
+<th>개발 (내 PC)</th>
+<th>운영 (Docker · EC2)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>화면을 주는 곳</td>
+<td>Vite 개발 서버 (5173)</td>
+<td>nginx (80)</td>
+</tr>
+<tr>
+<td><code>/api</code> 를 넘기는 곳</td>
+<td>Vite <code>server.proxy</code> → <code>localhost:8080</code></td>
+<td>nginx <code>proxy_pass</code> → <code>api-gateway:8080</code></td>
+</tr>
+<tr>
+<td>React 코드</td>
+<td><code>API_URL = "/api"</code></td>
+<td>똑같다</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="1-4-비밀-값은-환경-변수로">1-4. 비밀 값은 환경 변수로</h2>
+<p>서비스의 <code>application.yml</code> 에는 DB 비밀번호와 JWT 열쇠가 이렇게 적혀 있다.</p>
+<pre><code class="language-yaml"># user-service/src/main/resources/application.yml (일부)
+    url: ${DB_URL:jdbc:postgresql://localhost:5435/userdb}
+    password: ${DB_PASSWORD:postgres}   # [배포] 운영에서는 환경 변수 DB_PASSWORD 로 넣는다
+jwt:
+  secret: ${JWT_SECRET:dev-only-secret-change-me-0123456789abcdef}
+</code></pre>
+<p><code>${DB_PASSWORD:postgres}</code> 는 <strong>"환경 변수 DB_PASSWORD 가 있으면 그 값, 없으면 postgres"</strong> 라는 뜻이다.</p>
+<ul>
+<li>내 PC 에서는 환경 변수가 없으니 기본값(<code>postgres</code>)으로 그냥 돈다. MSA 기초 과정과 똑같다.</li>
+<li>서버에서는 Docker 가 컨테이너를 켤 때 진짜 비밀번호를 환경 변수로 넣어 준다. 그 값은 GitHub 저장소가 아니라 <strong>GitHub Secrets</strong> 에 둔다 (6장).</li>
+</ul>
+<p>이 저장소에서 바꾼 것은 <code>DB_USERNAME</code>, <code>DB_PASSWORD</code> 두 줄이다. <code>DB_URL</code>, <code>JWT_SECRET</code> 은 원래부터 환경 변수로 받게 되어 있었다.</p>
+<blockquote class="note">
+<p><strong>[배포 개념] 코드와 설정을 나눈다.</strong> 같은 이미지를 내 PC, 시험 서버, 운영 서버에서 똑같이 쓰고, <strong>다른 것은 환경 변수로만</strong> 바꾼다. 비밀 값이 코드(GitHub)에 남지 않는 것도 큰 장점이다. 공개 저장소에 비밀번호를 올리면 몇 분 안에 자동 수집 프로그램이 찾아간다.</p>
+</blockquote>
+<h2 id="확인-문제">확인 문제</h2>
+<ol>
+<li>서버에 올린 React 가 <code>http://localhost:8080/api</code> 를 부르면 왜 실패하나?</li>
+<li><code>/posts/3</code> 주소에서 새로 고침(F5)을 했을 때 nginx 가 <code>index.html</code> 을 주지 않으면 어떤 일이 생기나?</li>
+<li><code>${JWT_SECRET:dev-only-...}</code> 에서 콜론(<code>:</code>) 뒤의 값은 언제 쓰이나?</li>
+</ol>
+<nav class="pager"><a href="ch00.html"><small>← 이전</small>0장 과정 안내</a><a class="next" href="ch02.html"><small>다음 →</small>2장 Docker 이미지 만들기</a></nav>
+</article></div>
+<footer>React + Spring MSA 배포 실습 - Docker · AWS EC2 · GitHub Actions · 배포 · 강사 김대철 · <a href="https://github.com/sinaboro/react-spring-msa-deploy">GitHub</a></footer>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css" media="(prefers-color-scheme: light)">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css" media="(prefers-color-scheme: dark)">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/powershell.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/dockerfile.min.js"></script>
+<script>
+document.querySelectorAll('pre code').forEach(function(el){
+  if(window.hljs && !/language-(text|plaintext)/.test(el.className)){ try{ hljs.highlightElement(el); }catch(e){} }
+  var b=document.createElement('button'); b.className='copy'; b.textContent='복사';
+  b.onclick=function(){                       // 코드 상자의 글자를 그대로 클립보드에 복사
+    navigator.clipboard.writeText(el.innerText).then(function(){
+      b.textContent='복사됨'; b.classList.add('ok');
+      setTimeout(function(){ b.textContent='복사'; b.classList.remove('ok'); },1500);
+    });
+  };
+  el.parentNode.appendChild(b);
+});
+</script>
+</body></html>

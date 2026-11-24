@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>React + Spring MSA 배포 실습 - Docker · AWS EC2 · GitHub Actions 학습 교안</title>
+<meta name="description" content="[react-spring-mas-postgresql](https://github.com/sinaboro/react-spring-mas-postgresql) 기초 과정의 MSA 로그인 게시판을 Docker 이미지로 만들어 Docker Hub 에 올리고, AWS EC2 에 배포한 뒤, push 하면 자동으로 배포되게(CI/CD) 하는 교안과 실습 코드입니다.">
+<meta property="og:title" content="React + Spring MSA 배포 실습 - Docker · AWS EC2 · GitHub Actions 학습 교안"><meta property="og:description" content="[react-spring-mas-postgresql](https://github.com/sinaboro/react-spring-mas-postgresql) 기초 과정의 MSA 로그인 게시판을 Docker 이미지로 만들어 Docker Hub 에 올리고, AWS EC2 에 배포한 뒤, push 하면 자동으로 배포되게(CI/CD) 하는 교안과 실습 코드입니다."><meta property="og:image" content="https://sinaboro.github.io/react-spring-msa-deploy/images/fig_deploy_overview.png">
+<meta property="og:type" content="website">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-12 -12 24 24'%3E%3Cg fill='none' stroke='%2361dafb' stroke-width='1.6'%3E%3Cellipse rx='10' ry='4'/%3E%3Cellipse rx='10' ry='4' transform='rotate(60)'/%3E%3Cellipse rx='10' ry='4' transform='rotate(120)'/%3E%3C/g%3E%3Ccircle r='2' fill='%2361dafb'/%3E%3C/svg%3E">
+<script>
+if(/KAKAOTALK/i.test(navigator.userAgent)){location.href='kakaotalk://web/openExternal?url='+encodeURIComponent(location.href);}
+</script>
+<style>
+:root{--ink:#1f2328;--sub:#59636e;--line:#e3e6ea;--bg:#f7f8fa;--card:#fff;--navy:#16202e;--acc:#61dafb;--acc2:#0b7fab;
+--note:#eef8fc;--noteline:#61dafb;--code:#f3f5f7;--link:#0969da}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--ink:#e6edf3;--sub:#9da7b3;--line:#30363d;--bg:#0f141a;
+--card:#161b22;--navy:#0b1017;--note:#10232b;--noteline:#2a8fb0;--code:#1b222b;--link:#58a6ff;--acc2:#61dafb}}
+*{box-sizing:border-box}html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.75 "Pretendard","Malgun Gothic","Apple SD Gothic Neo",sans-serif;word-break:keep-all}
+a{color:var(--link)}img{max-width:100%;height:auto}
+header.top{background:var(--navy);color:#fff;position:sticky;top:0;z-index:5}
+header.top .in{max-width:1180px;margin:0 auto;padding:10px 16px;display:flex;gap:10px;align-items:center}
+header.top a{color:#fff;text-decoration:none}.logo{font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.logo b{color:var(--acc)}
+header.top .sp{flex:1}header.top .btn{font-size:14px;border:1px solid #ffffff55;border-radius:8px;padding:4px 10px;white-space:nowrap}
+.wrap{max-width:1180px;margin:0 auto;padding:0 16px}
+.doc{display:grid;grid-template-columns:250px minmax(0,1fr);gap:32px;padding:24px 16px 60px;max-width:1180px;margin:0 auto}
+.side{position:sticky;top:64px;align-self:start;max-height:calc(100vh - 80px);overflow:auto;font-size:14px}
+.side .cap{font-weight:800;margin:4px 10px 6px;color:var(--sub)}
+.side a{display:block;padding:5px 10px;border-radius:6px;color:var(--ink);text-decoration:none;line-height:1.45}
+.side a.on{background:var(--acc);color:#111;font-weight:700}.side a:hover:not(.on){background:var(--line)}
+.side .other{margin-top:14px;border-top:1px solid var(--line);padding-top:10px}
+article{min-width:0}
+article h1{font-size:28px;line-height:1.35;margin:0 0 20px;padding-bottom:12px;border-bottom:4px solid var(--acc)}
+article h2{font-size:22px;margin:40px 0 12px;padding-left:10px;border-left:5px solid var(--acc2)}
+article h3{font-size:18px;margin:28px 0 8px}
+figure{margin:18px 0;text-align:center}figure img{border:1px solid var(--line);border-radius:8px;background:#fff}
+figcaption{font-size:13px;color:var(--sub);margin-top:6px}
+.tbl{overflow-x:auto;margin:14px 0}table{border-collapse:collapse;width:100%;font-size:15px}
+th{background:var(--navy);color:#fff;text-align:left}th,td{padding:7px 10px;border:1px solid var(--line);vertical-align:top}
+blockquote.note{margin:16px 0;padding:10px 16px;background:var(--note);border-left:5px solid var(--noteline);border-radius:6px}
+blockquote.note p{margin:6px 0}
+code{background:var(--code);padding:1px 5px;border-radius:4px;font-family:Consolas,"D2Coding",monospace;font-size:.92em}
+.file{display:flex;justify-content:space-between;gap:10px;align-items:center;margin:18px 0 -6px;padding:6px 12px;
+background:var(--navy);color:#dfe6ee;border-radius:8px 8px 0 0;font:13px Consolas,monospace}
+.file a{color:var(--acc);font-family:inherit;white-space:nowrap}.file span{overflow-wrap:anywhere}
+.file+pre{border-top-left-radius:0;border-top-right-radius:0;margin-top:6px}
+pre{position:relative;background:var(--code);padding:34px 14px 12px;border-radius:8px;overflow-x:auto;border:1px solid var(--line)}
+pre code{background:none;padding:0;font-size:14px;line-height:1.55}
+pre code.hljs{padding:0;background:none}
+.copy{position:absolute;top:6px;right:6px;font-size:12px;padding:3px 9px;border-radius:6px;border:1px solid var(--line);
+background:var(--card);color:var(--ink);cursor:pointer;opacity:.85}.copy:hover{opacity:1}.copy.ok{background:#2da44e;color:#fff;border-color:#2da44e}
+.pager{display:flex;gap:12px;justify-content:space-between;margin-top:48px;padding-top:20px;border-top:1px solid var(--line)}
+.pager a{flex:1;padding:12px 14px;border:1px solid var(--line);border-radius:10px;text-decoration:none;color:var(--ink);background:var(--card)}
+.pager a small{display:block;color:var(--sub)}.pager .next{text-align:right}
+select.jump{display:none;width:100%;font-size:16px;padding:8px;margin-bottom:12px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--ink)}
+@media (max-width:860px){.doc{display:block;padding-top:16px}.side{display:none}select.jump{display:block}article h1{font-size:23px}
+header.top .hide-s{display:none}}
+.hero{background:var(--navy);color:#fff;padding:44px 0 36px}
+.hero h1{font-size:38px;margin:0 0 10px;line-height:1.25}.hero h1 b{color:var(--acc)}
+.hero p{margin:6px 0;color:#c9d4e0;max-width:760px}.hero .cta{display:flex;flex-wrap:wrap;gap:10px;margin-top:22px}
+.cta a{padding:11px 18px;border-radius:10px;text-decoration:none;font-weight:700}
+.cta .main{background:var(--acc);color:#111}.cta .sub{border:1px solid #ffffff66;color:#fff}
+.hero .twin{margin-top:16px;font-size:14px}.hero .twin a{color:var(--acc)}
+section{padding:36px 0 8px}section h2{font-size:24px;margin:0 0 6px}section .lead{color:var(--sub);margin:0 0 18px}
+.course{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:22px}
+.course>div{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px}
+.course h3{margin:0 0 4px;font-size:21px}.course .pdf{font-size:14px}
+.course ol{list-style:none;padding:0;margin:12px 0 0}
+.course li a{display:flex;gap:10px;align-items:center;padding:6px 8px;border-radius:8px;text-decoration:none;color:var(--ink)}
+.course li a:hover{background:var(--line)}
+.course li img{width:72px;height:44px;object-fit:cover;object-position:left top;border:1px solid var(--line);border-radius:5px;background:#fff;flex:none}
+.course li .noimg{width:72px;height:44px;border-radius:5px;background:var(--code);flex:none}
+.dl{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px}
+.dl a{display:block;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 14px;text-decoration:none;color:var(--ink)}
+.dl a:hover{border-color:var(--acc)}.dl b{font-family:Consolas,monospace}.dl small{display:block;color:var(--sub)}
+footer{padding:40px 0 50px;color:var(--sub);font-size:14px;text-align:center}
+@media (max-width:600px){.hero h1{font-size:28px}.course{grid-template-columns:1fr}}
+
+.overview{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px}
+.overview img{border:none}
+.course .lead2{color:var(--sub);font-size:14px;margin:2px 0 6px}
+</style></head><body>
+<header class="top"><div class="in">
+<a class="logo" href="index.html">React + Spring <b>배포</b></a><span class="sp"></span>
+<a class="btn hide-s" href="guide/ch00.html">교안</a>
+<a class="btn" href="index.html#pdf">PDF</a>
+<a class="btn" href="https://github.com/sinaboro/react-spring-msa-deploy" target="_blank">GitHub</a>
+</div></header>
+<div class="hero"><div class="wrap">
+<h1>React + Spring MSA <b>배포</b> 실습 - Docker · AWS EC2 · GitHub Actions</h1>
+<p><a href="https://github.com/sinaboro/react-spring-mas-postgresql">react-spring-mas-postgresql</a> <strong>기초 과정</strong>의 MSA 로그인 게시판을
+Docker 이미지로 만들어 Docker Hub 에 올리고, AWS EC2 에 배포한 뒤, <strong>push 하면 자동으로 배포</strong>되게(CI/CD) 하는 교안과 실습 코드입니다.</p>
+<div class="cta">
+<a class="main" href="guide/ch00.html">교안 시작 →</a>
+<a class="sub" href="https://github.com/sinaboro/react-spring-msa-deploy/archive/refs/heads/main.zip">실습 코드 전체 받기 (ZIP)</a>
+</div>
+<p class="twin">배포할 앱을 만드는 과정 → <a href="https://sinaboro.github.io/react-spring-mas-postgresql/">react-spring-mas-postgresql</a> (MSA 기초)</p>
+</div></div>
+<div class="wrap">
+<section><h2>배포 한눈에 보기</h2><p class="lead">git push 한 번이면 이미지 빌드 → Docker Hub → EC2 배포까지 자동으로 이어집니다.</p>
+<figure class="overview"><a href="images/fig_deploy_overview.png" target="_blank"><img src="images/fig_deploy_overview.png" alt="배포 한눈에 보기"></a></figure>
+</section>
+<section><h2>원본(MSA 기초)과 달라진 코드</h2><p class="lead">앱 코드는 거의 그대로이고, 배포용 파일이 더해집니다.</p>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>파일</th>
+<th>바뀐 것</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>frontend/src/api.js</code></td>
+<td>API 주소 <code>http://localhost:8080/api</code> → <code>/api</code></td>
+</tr>
+<tr>
+<td><code>frontend/vite.config.js</code></td>
+<td>개발 서버가 <code>/api</code> 를 <code>localhost:8080</code> 으로 넘기는 proxy</td>
+</tr>
+<tr>
+<td><code>backend/*/application.yml</code></td>
+<td>DB 비밀번호를 환경 변수 <code>DB_PASSWORD</code> 로</td>
+</tr>
+<tr>
+<td><code>docker-compose.yml</code>, <code>deploy/docker-compose.prod.yml</code></td>
+<td>컨테이너 시간대 <code>TZ: Asia/Seoul</code> (없으면 글 작성 시각이 UTC)</td>
+</tr>
+<tr>
+<td>새 파일</td>
+<td><code>backend/Dockerfile</code>, <code>frontend/Dockerfile</code>, <code>frontend/nginx.conf</code>, compose 2개, 워크플로</td>
+</tr>
+</tbody>
+</table></div>
+</section>
+<section id="chapters"><h2>교안 목차</h2><p class="lead">장마다 개념 → 따라 하기(화면 캡처) → 확인 순서이고, 확인 문제 답은 부록 B 에 있습니다. (권장 8시간)</p>
+<div class="course"><div><h3>배포</h3><p class="lead2">Docker 이미지 → Docker Hub → AWS EC2 → GitHub Actions 자동 배포</p><a class="pdf" href="React_Spring_MSA_%EB%B0%B0%ED%8F%AC_%ED%95%99%EC%8A%B5%EA%B5%90%EC%95%88.pdf" target="_blank">PDF 교안 열기</a><ol><li><a href="guide/ch00.html"><img src="images/fig_deploy_overview.png" alt="" loading="lazy"><span>0장 과정 안내</span></a></li><li><a href="guide/ch01.html"><span class="noimg"></span><span>1장 배포를 위해 바꾼 코드</span></a></li><li><a href="guide/ch02.html"><img src="images/fig_image_container.png" alt="" loading="lazy"><span>2장 Docker 이미지 만들기</span></a></li><li><a href="guide/ch03.html"><img src="images/c03_dockerhub_repos.jpg" alt="" loading="lazy"><span>3장 Docker Hub 에 이미지 올리기</span></a></li><li><a href="guide/ch04.html"><img src="images/d01_ec2_dashboard.jpg" alt="" loading="lazy"><span>4장 AWS EC2 만들기</span></a></li><li><a href="guide/ch05.html"><img src="images/e01_site_first.jpg" alt="" loading="lazy"><span>5장 서버 준비와 첫 배포</span></a></li><li><a href="guide/ch06.html"><img src="images/f01_variables_form.jpg" alt="" loading="lazy"><span>6장 GitHub Actions - 비밀 값 넣기와 워크플로 읽기</span></a></li><li><a href="guide/ch07.html"><img src="images/e01_site_first.jpg" alt="" loading="lazy"><span>7장 자동 배포 확인 - push 하면 서버가 바뀐다</span></a></li><li><a href="guide/ch08.html"><span class="noimg"></span><span>8장 정리와 삭제 - 요금이 나가지 않게</span></a></li><li><a href="guide/appA.html"><span class="noimg"></span><span>부록 A 오류 해결</span></a></li><li><a href="guide/appB.html"><span class="noimg"></span><span>부록 B 확인 문제 풀이</span></a></li></ol></div></div></section>
+<section id="code"><h2>실습 코드</h2><p class="lead">Dockerfile, compose 파일, 워크플로를 GitHub 에서 바로 볼 수 있습니다.
+한 번에 받으려면 <a href="https://github.com/sinaboro/react-spring-msa-deploy/archive/refs/heads/main.zip">전체 ZIP</a> 이 편합니다.</p>
+<div class="dl"><a href="https://github.com/sinaboro/react-spring-msa-deploy/tree/main/backend" target="_blank"><b>backend/</b><small>MSA 기초 과정 서비스 3개 + Dockerfile (서비스 하나를 골라 굽는 공용 파일)</small></a><a href="https://github.com/sinaboro/react-spring-msa-deploy/tree/main/frontend" target="_blank"><b>frontend/</b><small>React + Dockerfile(빌드 → nginx) + nginx.conf (/api 를 게이트웨이로)</small></a><a href="https://github.com/sinaboro/react-spring-msa-deploy/blob/main/db/init.sql" target="_blank"><b>db/init.sql</b><small>userdb, postdb 만들기</small></a><a href="https://github.com/sinaboro/react-spring-msa-deploy/blob/main/docker-compose.yml" target="_blank"><b>docker-compose.yml</b><small>내 PC 에서 빌드해서 운영처럼 실행 (http://localhost)</small></a><a href="https://github.com/sinaboro/react-spring-msa-deploy/blob/main/deploy/docker-compose.prod.yml" target="_blank"><b>deploy/docker-compose.prod.yml</b><small>EC2 에서 Docker Hub 이미지를 받아 실행</small></a><a href="https://github.com/sinaboro/react-spring-msa-deploy/blob/main/.github/workflows/deploy.yml" target="_blank"><b>.github/workflows/deploy.yml</b><small>push → 빌드 → Docker Hub → EC2 배포</small></a><a href="https://github.com/sinaboro/react-spring-msa-deploy/tree/main/docs/guide" target="_blank"><b>docs/guide/</b><small>배포 교안 원고 (0~8장, 부록 A·B) → PDF · 웹 교안</small></a><a href="https://github.com/sinaboro/react-spring-msa-deploy/tree/main/tools" target="_blank"><b>tools/</b><small>교안 빌드 (그림 make_figures, PDF build_guide, 웹 build_site)</small></a><a href="https://github.com/sinaboro/react-spring-msa-deploy/blob/main/.env.example" target="_blank"><b>.env.example</b><small>내 PC 용 .env 본보기 (DOCKERHUB_USERNAME)</small></a></div></section>
+<section id="pdf"><h2>PDF 교안</h2><p class="lead">웹 교안과 같은 내용입니다. 인쇄하거나 내려받아 볼 때 쓰세요.</p>
+<div class="dl"><a href="React_Spring_MSA_%EB%B0%B0%ED%8F%AC_%ED%95%99%EC%8A%B5%EA%B5%90%EC%95%88.pdf" target="_blank"><b>React_Spring_MSA_배포_학습교안.pdf</b><small>배포 전체 (인쇄용)</small></a></div></section>
+</div>
+<footer>강사 김대철 · <a href="https://github.com/sinaboro/react-spring-msa-deploy">GitHub 저장소</a></footer>
+
+</body></html>

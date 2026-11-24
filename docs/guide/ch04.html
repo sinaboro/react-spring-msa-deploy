@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>4장. AWS EC2 만들기 - 배포</title>
+<meta name="description" content="[react-spring-mas-postgresql](https://github.com/sinaboro/react-spring-mas-postgresql) 기초 과정의 MSA 로그인 게시판을 Docker 이미지로 만들어 Docker Hub 에 올리고, AWS EC2 에 배포한 뒤, push 하면 자동으로 배포되게(CI/CD) 하는 교안과 실습 코드입니다.">
+<meta property="og:title" content="4장. AWS EC2 만들기 - 배포"><meta property="og:description" content="[react-spring-mas-postgresql](https://github.com/sinaboro/react-spring-mas-postgresql) 기초 과정의 MSA 로그인 게시판을 Docker 이미지로 만들어 Docker Hub 에 올리고, AWS EC2 에 배포한 뒤, push 하면 자동으로 배포되게(CI/CD) 하는 교안과 실습 코드입니다."><meta property="og:image" content="https://sinaboro.github.io/react-spring-msa-deploy/images/fig_deploy_overview.png">
+<meta property="og:type" content="website">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-12 -12 24 24'%3E%3Cg fill='none' stroke='%2361dafb' stroke-width='1.6'%3E%3Cellipse rx='10' ry='4'/%3E%3Cellipse rx='10' ry='4' transform='rotate(60)'/%3E%3Cellipse rx='10' ry='4' transform='rotate(120)'/%3E%3C/g%3E%3Ccircle r='2' fill='%2361dafb'/%3E%3C/svg%3E">
+<script>
+if(/KAKAOTALK/i.test(navigator.userAgent)){location.href='kakaotalk://web/openExternal?url='+encodeURIComponent(location.href);}
+</script>
+<style>
+:root{--ink:#1f2328;--sub:#59636e;--line:#e3e6ea;--bg:#f7f8fa;--card:#fff;--navy:#16202e;--acc:#61dafb;--acc2:#0b7fab;
+--note:#eef8fc;--noteline:#61dafb;--code:#f3f5f7;--link:#0969da}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--ink:#e6edf3;--sub:#9da7b3;--line:#30363d;--bg:#0f141a;
+--card:#161b22;--navy:#0b1017;--note:#10232b;--noteline:#2a8fb0;--code:#1b222b;--link:#58a6ff;--acc2:#61dafb}}
+*{box-sizing:border-box}html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.75 "Pretendard","Malgun Gothic","Apple SD Gothic Neo",sans-serif;word-break:keep-all}
+a{color:var(--link)}img{max-width:100%;height:auto}
+header.top{background:var(--navy);color:#fff;position:sticky;top:0;z-index:5}
+header.top .in{max-width:1180px;margin:0 auto;padding:10px 16px;display:flex;gap:10px;align-items:center}
+header.top a{color:#fff;text-decoration:none}.logo{font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.logo b{color:var(--acc)}
+header.top .sp{flex:1}header.top .btn{font-size:14px;border:1px solid #ffffff55;border-radius:8px;padding:4px 10px;white-space:nowrap}
+.wrap{max-width:1180px;margin:0 auto;padding:0 16px}
+.doc{display:grid;grid-template-columns:250px minmax(0,1fr);gap:32px;padding:24px 16px 60px;max-width:1180px;margin:0 auto}
+.side{position:sticky;top:64px;align-self:start;max-height:calc(100vh - 80px);overflow:auto;font-size:14px}
+.side .cap{font-weight:800;margin:4px 10px 6px;color:var(--sub)}
+.side a{display:block;padding:5px 10px;border-radius:6px;color:var(--ink);text-decoration:none;line-height:1.45}
+.side a.on{background:var(--acc);color:#111;font-weight:700}.side a:hover:not(.on){background:var(--line)}
+.side .other{margin-top:14px;border-top:1px solid var(--line);padding-top:10px}
+article{min-width:0}
+article h1{font-size:28px;line-height:1.35;margin:0 0 20px;padding-bottom:12px;border-bottom:4px solid var(--acc)}
+article h2{font-size:22px;margin:40px 0 12px;padding-left:10px;border-left:5px solid var(--acc2)}
+article h3{font-size:18px;margin:28px 0 8px}
+figure{margin:18px 0;text-align:center}figure img{border:1px solid var(--line);border-radius:8px;background:#fff}
+figcaption{font-size:13px;color:var(--sub);margin-top:6px}
+.tbl{overflow-x:auto;margin:14px 0}table{border-collapse:collapse;width:100%;font-size:15px}
+th{background:var(--navy);color:#fff;text-align:left}th,td{padding:7px 10px;border:1px solid var(--line);vertical-align:top}
+blockquote.note{margin:16px 0;padding:10px 16px;background:var(--note);border-left:5px solid var(--noteline);border-radius:6px}
+blockquote.note p{margin:6px 0}
+code{background:var(--code);padding:1px 5px;border-radius:4px;font-family:Consolas,"D2Coding",monospace;font-size:.92em}
+.file{display:flex;justify-content:space-between;gap:10px;align-items:center;margin:18px 0 -6px;padding:6px 12px;
+background:var(--navy);color:#dfe6ee;border-radius:8px 8px 0 0;font:13px Consolas,monospace}
+.file a{color:var(--acc);font-family:inherit;white-space:nowrap}.file span{overflow-wrap:anywhere}
+.file+pre{border-top-left-radius:0;border-top-right-radius:0;margin-top:6px}
+pre{position:relative;background:var(--code);padding:34px 14px 12px;border-radius:8px;overflow-x:auto;border:1px solid var(--line)}
+pre code{background:none;padding:0;font-size:14px;line-height:1.55}
+pre code.hljs{padding:0;background:none}
+.copy{position:absolute;top:6px;right:6px;font-size:12px;padding:3px 9px;border-radius:6px;border:1px solid var(--line);
+background:var(--card);color:var(--ink);cursor:pointer;opacity:.85}.copy:hover{opacity:1}.copy.ok{background:#2da44e;color:#fff;border-color:#2da44e}
+.pager{display:flex;gap:12px;justify-content:space-between;margin-top:48px;padding-top:20px;border-top:1px solid var(--line)}
+.pager a{flex:1;padding:12px 14px;border:1px solid var(--line);border-radius:10px;text-decoration:none;color:var(--ink);background:var(--card)}
+.pager a small{display:block;color:var(--sub)}.pager .next{text-align:right}
+select.jump{display:none;width:100%;font-size:16px;padding:8px;margin-bottom:12px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--ink)}
+@media (max-width:860px){.doc{display:block;padding-top:16px}.side{display:none}select.jump{display:block}article h1{font-size:23px}
+header.top .hide-s{display:none}}
+.hero{background:var(--navy);color:#fff;padding:44px 0 36px}
+.hero h1{font-size:38px;margin:0 0 10px;line-height:1.25}.hero h1 b{color:var(--acc)}
+.hero p{margin:6px 0;color:#c9d4e0;max-width:760px}.hero .cta{display:flex;flex-wrap:wrap;gap:10px;margin-top:22px}
+.cta a{padding:11px 18px;border-radius:10px;text-decoration:none;font-weight:700}
+.cta .main{background:var(--acc);color:#111}.cta .sub{border:1px solid #ffffff66;color:#fff}
+.hero .twin{margin-top:16px;font-size:14px}.hero .twin a{color:var(--acc)}
+section{padding:36px 0 8px}section h2{font-size:24px;margin:0 0 6px}section .lead{color:var(--sub);margin:0 0 18px}
+.course{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:22px}
+.course>div{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px}
+.course h3{margin:0 0 4px;font-size:21px}.course .pdf{font-size:14px}
+.course ol{list-style:none;padding:0;margin:12px 0 0}
+.course li a{display:flex;gap:10px;align-items:center;padding:6px 8px;border-radius:8px;text-decoration:none;color:var(--ink)}
+.course li a:hover{background:var(--line)}
+.course li img{width:72px;height:44px;object-fit:cover;object-position:left top;border:1px solid var(--line);border-radius:5px;background:#fff;flex:none}
+.course li .noimg{width:72px;height:44px;border-radius:5px;background:var(--code);flex:none}
+.dl{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px}
+.dl a{display:block;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 14px;text-decoration:none;color:var(--ink)}
+.dl a:hover{border-color:var(--acc)}.dl b{font-family:Consolas,monospace}.dl small{display:block;color:var(--sub)}
+footer{padding:40px 0 50px;color:var(--sub);font-size:14px;text-align:center}
+@media (max-width:600px){.hero h1{font-size:28px}.course{grid-template-columns:1fr}}
+
+.overview{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px}
+.overview img{border:none}
+.course .lead2{color:var(--sub);font-size:14px;margin:2px 0 6px}
+</style></head><body>
+<header class="top"><div class="in">
+<a class="logo" href="../index.html">React + Spring <b>배포</b></a><span class="sp"></span>
+<a class="btn hide-s" href="../guide/ch00.html">교안</a>
+<a class="btn" href="../index.html#pdf">PDF</a>
+<a class="btn" href="https://github.com/sinaboro/react-spring-msa-deploy" target="_blank">GitHub</a>
+</div></header>
+<div class="doc">
+<nav class="side"><div class="cap">배포</div><a href="ch00.html">0장 과정 안내</a><a href="ch01.html">1장 배포를 위해 바꾼 코드</a><a href="ch02.html">2장 Docker 이미지 만들기</a><a href="ch03.html">3장 Docker Hub 에 이미지 올리기</a><a href="ch04.html" class=on>4장 AWS EC2 만들기</a><a href="ch05.html">5장 서버 준비와 첫 배포</a><a href="ch06.html">6장 GitHub Actions - 비밀 값 넣기와 워크플로 읽기</a><a href="ch07.html">7장 자동 배포 확인 - push 하면 서버가 바뀐다</a><a href="ch08.html">8장 정리와 삭제 - 요금이 나가지 않게</a><a href="appA.html">부록 A 오류 해결</a><a href="appB.html">부록 B 확인 문제 풀이</a><div class="other"><a href="../index.html">← 첫 화면</a><a href="../React_Spring_MSA_%EB%B0%B0%ED%8F%AC_%ED%95%99%EC%8A%B5%EA%B5%90%EC%95%88.pdf" target="_blank">PDF 교안</a></div></nav>
+<article>
+<select class="jump" onchange="location.href=this.value" aria-label="장 이동"><option value="ch00.html">0장 과정 안내</option><option value="ch01.html">1장 배포를 위해 바꾼 코드</option><option value="ch02.html">2장 Docker 이미지 만들기</option><option value="ch03.html">3장 Docker Hub 에 이미지 올리기</option><option value="ch04.html" selected>4장 AWS EC2 만들기</option><option value="ch05.html">5장 서버 준비와 첫 배포</option><option value="ch06.html">6장 GitHub Actions - 비밀 값 넣기와 워크플로 읽기</option><option value="ch07.html">7장 자동 배포 확인 - push 하면 서버가 바뀐다</option><option value="ch08.html">8장 정리와 삭제 - 요금이 나가지 않게</option><option value="appA.html">부록 A 오류 해결</option><option value="appB.html">부록 B 확인 문제 풀이</option></select>
+<h1 id="4장-aws-ec2-만들기">4장. AWS EC2 만들기</h1>
+<h2 id="학습-목표">학습 목표</h2>
+<ul>
+<li>EC2 인스턴스, AMI, 인스턴스 유형, 키 페어, 보안 그룹이 각각 무엇인지 안다.</li>
+<li>서울 리전에 가장 싼 Ubuntu 서버(t3.micro)를 만든다.</li>
+<li>보안 그룹으로 <strong>22(SSH)와 80(HTTP)만</strong> 연다.</li>
+</ul>
+<h2 id="4-1-낱말-먼저">4-1. 낱말 먼저</h2>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>낱말</th>
+<th>뜻</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>EC2</td>
+<td>AWS 가 빌려주는 가상 컴퓨터 서비스. 빌린 컴퓨터 한 대를 <strong>인스턴스</strong>라고 부른다</td>
+</tr>
+<tr>
+<td>리전(Region)</td>
+<td>컴퓨터가 있는 지역. 한국 사용자에게는 <strong>아시아 태평양(서울) ap-northeast-2</strong> 가 가깝다</td>
+</tr>
+<tr>
+<td>AMI</td>
+<td>인스턴스에 깔 운영체제 꾸러미. 이 교안은 <strong>Ubuntu Server 26.04 LTS</strong></td>
+</tr>
+<tr>
+<td>인스턴스 유형</td>
+<td>컴퓨터의 크기. <strong>t3.micro</strong> = CPU 2개, 메모리 1GB (가장 싼 축, 프리 티어 대상)</td>
+</tr>
+<tr>
+<td>키 페어</td>
+<td>SSH 로 접속할 때 쓰는 열쇠 한 쌍. 자물쇠(공개 키)는 서버에, 열쇠(<code>.pem</code>, 개인 키)는 내 PC 에</td>
+</tr>
+<tr>
+<td>보안 그룹</td>
+<td>인스턴스 앞의 방화벽. 어떤 포트를 누구에게 열지 정한다</td>
+</tr>
+<tr>
+<td>퍼블릭 IP</td>
+<td>인터넷에서 이 인스턴스를 찾는 주소. 인스턴스를 <strong>중지했다 켜면 바뀐다</strong> (7장)</td>
+</tr>
+</tbody>
+</table></div>
+<h2 id="4-2-리전을-서울로">4-2. 리전을 서울로</h2>
+<p>AWS 콘솔(https://console.aws.amazon.com)에 로그인하고, 위쪽 검색창에 <code>EC2</code> 를 쳐서 들어간다. <strong>오른쪽 위 리전이 "아시아 태평양 (서울)"</strong> 인지 꼭 확인한다. 다른 리전에 만들면 나중에 "인스턴스가 사라졌다" 고 착각하기 쉽다. (리전마다 화면이 따로다)</p>
+<figure><a href="../images/d01_ec2_dashboard.jpg" target="_blank"><img src="../images/d01_ec2_dashboard.jpg" alt="EC2 대시보드 - 오른쪽 위 리전이 서울인지 확인하고 &quot;인스턴스 시작&quot;" loading="lazy"></a><figcaption>EC2 대시보드 - 오른쪽 위 리전이 서울인지 확인하고 &quot;인스턴스 시작&quot;</figcaption></figure>
+<p><strong>인스턴스 시작</strong> 을 누른다.</p>
+<h2 id="4-3-이름과-운영체제">4-3. 이름과 운영체제</h2>
+<figure><a href="../images/d02_launch_ubuntu.jpg" target="_blank"><img src="../images/d02_launch_ubuntu.jpg" alt="이름은 msa-deploy-server, 운영체제는 Ubuntu" loading="lazy"></a><figcaption>이름은 msa-deploy-server, 운영체제는 Ubuntu</figcaption></figure>
+<ul>
+<li><strong>이름</strong>: <code>msa-deploy-server</code></li>
+<li><strong>애플리케이션 및 OS 이미지</strong>: Quick Start 에서 <strong>Ubuntu</strong> → <code>Ubuntu Server 26.04 LTS</code> (64비트 x86)</li>
+</ul>
+<blockquote class="note">
+<p><strong>LTS(Long Term Support)</strong> 는 오랫동안 보안 업데이트를 해 주는 버전이다. 서버에는 LTS 를 쓴다. 교안을 만든 때보다 새 LTS 가 나왔다면 그것을 골라도 명령은 거의 같다.</p>
+</blockquote>
+<h2 id="4-4-인스턴스-유형">4-4. 인스턴스 유형</h2>
+<figure><a href="../images/d03_launch_type.jpg" target="_blank"><img src="../images/d03_launch_type.jpg" alt="인스턴스 유형 t3.micro - vCPU 2, 메모리 1GiB, 시간당 요금이 함께 보인다" loading="lazy"></a><figcaption>인스턴스 유형 t3.micro - vCPU 2, 메모리 1GiB, 시간당 요금이 함께 보인다</figcaption></figure>
+<p><strong>t3.micro</strong> 를 고른다. 화면에 "온디맨드 Linux 기본 요금: 0.013 USD 시간당" 처럼 요금이 보인다. 켜 둔 시간만큼 붙는다.</p>
+<blockquote class="note">
+<p>메모리 1GB 에 서비스 3개 + DB + nginx 를 올리는 것은 빠듯하다. 그래서 2장에서 Java 메모리 한도를 정했고, 5장에서 <strong>스왑(디스크를 메모리처럼 쓰기) 2GB</strong> 를 더한다. 더 넉넉하게 하려면 t3.small(2GB)을 고르면 되지만 요금이 두 배다.</p>
+</blockquote>
+<h2 id="4-5-키-페어-만들기">4-5. 키 페어 만들기</h2>
+<p>키 페어 칸 옆의 <strong>새 키 페어 생성</strong> 을 누른다.</p>
+<figure><a href="../images/d04_keypair.jpg" target="_blank"><img src="../images/d04_keypair.jpg" alt="키 페어 생성 - 이름 msa-deploy-key, RSA, .pem" loading="lazy"></a><figcaption>키 페어 생성 - 이름 msa-deploy-key, RSA, .pem</figcaption></figure>
+<ul>
+<li>이름: <code>msa-deploy-key</code></li>
+<li>유형: <strong>RSA</strong>, 파일 형식: <strong>.pem</strong> (Windows 의 <code>ssh</code> 명령도 .pem 을 쓴다)</li>
+<li><strong>키 페어 생성</strong> 을 누르면 <code>msa-deploy-key.pem</code> 이 <strong>한 번만</strong> 내려받아진다.</li>
+</ul>
+<p>내려받은 파일은 잃어버리지 않을 곳으로 옮긴다. 이 교안은 <code>바탕 화면\공부자료\msa-deploy-key.pem</code> 에 두었다.</p>
+<blockquote class="note">
+<p><strong>[배포 개념] .pem 파일은 서버의 열쇠다.</strong> 이 파일만 있으면 누구나 내 서버에 들어올 수 있다. GitHub 에 올리지 않는다(<code>.gitignore</code> 에 <code>*.pem</code> 이 있다). 잃어버리면 AWS 도 다시 만들어 주지 않는다. 그 서버에는 다시 접속할 수 없으니 새로 만들어야 한다.</p>
+</blockquote>
+<h2 id="4-6-네트워크보안-그룹와-저장소">4-6. 네트워크(보안 그룹)와 저장소</h2>
+<figure><a href="../images/d05_network_storage.jpg" target="_blank"><img src="../images/d05_network_storage.jpg" alt="보안 그룹 - SSH 와 HTTP 허용. 스토리지는 20GiB gp3" loading="lazy"></a><figcaption>보안 그룹 - SSH 와 HTTP 허용. 스토리지는 20GiB gp3</figcaption></figure>
+<p><strong>네트워크 설정</strong> 에서 "보안 그룹 생성" 을 그대로 두고 체크 칸을 이렇게 맞춘다.</p>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>규칙</th>
+<th>체크</th>
+<th>까닭</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>다음에서 SSH 트래픽 허용 (22) · 위치 무관 0.0.0.0/0</td>
+<td>✔</td>
+<td>내 PC 와 <strong>GitHub Actions</strong> 가 접속한다</td>
+</tr>
+<tr>
+<td>인터넷에서 HTTPS 트래픽 허용 (443)</td>
+<td>끔</td>
+<td>이 교안은 HTTPS 를 다루지 않는다 (8장 더 나아가기)</td>
+</tr>
+<tr>
+<td>인터넷에서 HTTP 트래픽 허용 (80)</td>
+<td>✔</td>
+<td>사용자가 게시판에 들어오는 문</td>
+</tr>
+</tbody>
+</table></div>
+<blockquote class="note">
+<p><strong>SSH 를 "위치 무관" 으로 여는 까닭</strong> - 노란 경고처럼 "내 IP" 로만 여는 것이 더 안전하다. 그런데 GitHub Actions 는 실행할 때마다 <strong>다른 IP 의 컴퓨터</strong>에서 접속하므로 내 IP 로 막으면 자동 배포가 실패한다. 대신 비밀번호 로그인은 꺼져 있고 <strong>.pem 열쇠로만</strong> 들어올 수 있으니, 열쇠만 잘 지키면 된다.</p>
+</blockquote>
+<p><strong>스토리지 구성</strong> 은 기본 8GiB 를 <strong>20GiB gp3</strong> 로 늘린다. 이미지 4개(백엔드 하나에 약 590MB) + postgres + 새 버전을 받을 때 잠깐 겹치는 공간까지 생각하면 8GiB 는 금방 찬다. (프리 티어는 30GiB 까지)</p>
+<p>오른쪽 <strong>요약</strong> 에서 Ubuntu 26.04, t3.micro, 새 보안 그룹, 20GiB 를 한 번 더 보고 <strong>인스턴스 시작</strong> 을 누른다.</p>
+<h2 id="4-7-만들어졌는지-확인">4-7. 만들어졌는지 확인</h2>
+<figure><a href="../images/d06_launch_success.jpg" target="_blank"><img src="../images/d06_launch_success.jpg" alt="인스턴스 시작 성공 - i-로 시작하는 인스턴스 ID" loading="lazy"></a><figcaption>인스턴스 시작 성공 - i-로 시작하는 인스턴스 ID</figcaption></figure>
+<p><strong>모든 인스턴스 보기</strong> 를 누른다. 1~2분 지나면 인스턴스 상태가 <strong>실행 중</strong>, 상태 검사가 <strong>3/3 검사 통과</strong> 로 바뀐다.</p>
+<figure><a href="../images/d07_instances.jpg" target="_blank"><img src="../images/d07_instances.jpg" alt="인스턴스 목록 - 퍼블릭 IPv4 주소를 적어 둔다" loading="lazy"></a><figcaption>인스턴스 목록 - 퍼블릭 IPv4 주소를 적어 둔다</figcaption></figure>
+<p><strong>퍼블릭 IPv4 주소</strong>(예: <code>43.201.21.211</code>)를 적어 둔다. 5장에서 이 주소로 접속하고, 6장에서 GitHub 에 <code>EC2_HOST</code> 로 넣는다.</p>
+<blockquote class="note">
+<p><strong>보안 그룹 이름은 <code>launch-wizard-1</code></strong> 처럼 자동으로 붙는다. 8장에서 인스턴스를 지운 뒤 함께 지운다.</p>
+</blockquote>
+<h2 id="확인-문제">확인 문제</h2>
+<ol>
+<li>인스턴스를 만들 때 리전을 확인해야 하는 까닭은?</li>
+<li><code>.pem</code> 파일을 잃어버리면 어떻게 되나?</li>
+<li>보안 그룹에서 8080(게이트웨이)이나 5432(DB)를 열지 않아도 게시판이 동작하는 까닭은?</li>
+</ol>
+<nav class="pager"><a href="ch03.html"><small>← 이전</small>3장 Docker Hub 에 이미지 올리기</a><a class="next" href="ch05.html"><small>다음 →</small>5장 서버 준비와 첫 배포</a></nav>
+</article></div>
+<footer>React + Spring MSA 배포 실습 - Docker · AWS EC2 · GitHub Actions · 배포 · 강사 김대철 · <a href="https://github.com/sinaboro/react-spring-msa-deploy">GitHub</a></footer>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css" media="(prefers-color-scheme: light)">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css" media="(prefers-color-scheme: dark)">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/powershell.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/dockerfile.min.js"></script>
+<script>
+document.querySelectorAll('pre code').forEach(function(el){
+  if(window.hljs && !/language-(text|plaintext)/.test(el.className)){ try{ hljs.highlightElement(el); }catch(e){} }
+  var b=document.createElement('button'); b.className='copy'; b.textContent='복사';
+  b.onclick=function(){                       // 코드 상자의 글자를 그대로 클립보드에 복사
+    navigator.clipboard.writeText(el.innerText).then(function(){
+      b.textContent='복사됨'; b.classList.add('ok');
+      setTimeout(function(){ b.textContent='복사'; b.classList.remove('ok'); },1500);
+    });
+  };
+  el.parentNode.appendChild(b);
+});
+</script>
+</body></html>

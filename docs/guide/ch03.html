@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>3장. Docker Hub 에 이미지 올리기 - 배포</title>
+<meta name="description" content="[react-spring-mas-postgresql](https://github.com/sinaboro/react-spring-mas-postgresql) 기초 과정의 MSA 로그인 게시판을 Docker 이미지로 만들어 Docker Hub 에 올리고, AWS EC2 에 배포한 뒤, push 하면 자동으로 배포되게(CI/CD) 하는 교안과 실습 코드입니다.">
+<meta property="og:title" content="3장. Docker Hub 에 이미지 올리기 - 배포"><meta property="og:description" content="[react-spring-mas-postgresql](https://github.com/sinaboro/react-spring-mas-postgresql) 기초 과정의 MSA 로그인 게시판을 Docker 이미지로 만들어 Docker Hub 에 올리고, AWS EC2 에 배포한 뒤, push 하면 자동으로 배포되게(CI/CD) 하는 교안과 실습 코드입니다."><meta property="og:image" content="https://sinaboro.github.io/react-spring-msa-deploy/images/fig_deploy_overview.png">
+<meta property="og:type" content="website">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-12 -12 24 24'%3E%3Cg fill='none' stroke='%2361dafb' stroke-width='1.6'%3E%3Cellipse rx='10' ry='4'/%3E%3Cellipse rx='10' ry='4' transform='rotate(60)'/%3E%3Cellipse rx='10' ry='4' transform='rotate(120)'/%3E%3C/g%3E%3Ccircle r='2' fill='%2361dafb'/%3E%3C/svg%3E">
+<script>
+if(/KAKAOTALK/i.test(navigator.userAgent)){location.href='kakaotalk://web/openExternal?url='+encodeURIComponent(location.href);}
+</script>
+<style>
+:root{--ink:#1f2328;--sub:#59636e;--line:#e3e6ea;--bg:#f7f8fa;--card:#fff;--navy:#16202e;--acc:#61dafb;--acc2:#0b7fab;
+--note:#eef8fc;--noteline:#61dafb;--code:#f3f5f7;--link:#0969da}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--ink:#e6edf3;--sub:#9da7b3;--line:#30363d;--bg:#0f141a;
+--card:#161b22;--navy:#0b1017;--note:#10232b;--noteline:#2a8fb0;--code:#1b222b;--link:#58a6ff;--acc2:#61dafb}}
+*{box-sizing:border-box}html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.75 "Pretendard","Malgun Gothic","Apple SD Gothic Neo",sans-serif;word-break:keep-all}
+a{color:var(--link)}img{max-width:100%;height:auto}
+header.top{background:var(--navy);color:#fff;position:sticky;top:0;z-index:5}
+header.top .in{max-width:1180px;margin:0 auto;padding:10px 16px;display:flex;gap:10px;align-items:center}
+header.top a{color:#fff;text-decoration:none}.logo{font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.logo b{color:var(--acc)}
+header.top .sp{flex:1}header.top .btn{font-size:14px;border:1px solid #ffffff55;border-radius:8px;padding:4px 10px;white-space:nowrap}
+.wrap{max-width:1180px;margin:0 auto;padding:0 16px}
+.doc{display:grid;grid-template-columns:250px minmax(0,1fr);gap:32px;padding:24px 16px 60px;max-width:1180px;margin:0 auto}
+.side{position:sticky;top:64px;align-self:start;max-height:calc(100vh - 80px);overflow:auto;font-size:14px}
+.side .cap{font-weight:800;margin:4px 10px 6px;color:var(--sub)}
+.side a{display:block;padding:5px 10px;border-radius:6px;color:var(--ink);text-decoration:none;line-height:1.45}
+.side a.on{background:var(--acc);color:#111;font-weight:700}.side a:hover:not(.on){background:var(--line)}
+.side .other{margin-top:14px;border-top:1px solid var(--line);padding-top:10px}
+article{min-width:0}
+article h1{font-size:28px;line-height:1.35;margin:0 0 20px;padding-bottom:12px;border-bottom:4px solid var(--acc)}
+article h2{font-size:22px;margin:40px 0 12px;padding-left:10px;border-left:5px solid var(--acc2)}
+article h3{font-size:18px;margin:28px 0 8px}
+figure{margin:18px 0;text-align:center}figure img{border:1px solid var(--line);border-radius:8px;background:#fff}
+figcaption{font-size:13px;color:var(--sub);margin-top:6px}
+.tbl{overflow-x:auto;margin:14px 0}table{border-collapse:collapse;width:100%;font-size:15px}
+th{background:var(--navy);color:#fff;text-align:left}th,td{padding:7px 10px;border:1px solid var(--line);vertical-align:top}
+blockquote.note{margin:16px 0;padding:10px 16px;background:var(--note);border-left:5px solid var(--noteline);border-radius:6px}
+blockquote.note p{margin:6px 0}
+code{background:var(--code);padding:1px 5px;border-radius:4px;font-family:Consolas,"D2Coding",monospace;font-size:.92em}
+.file{display:flex;justify-content:space-between;gap:10px;align-items:center;margin:18px 0 -6px;padding:6px 12px;
+background:var(--navy);color:#dfe6ee;border-radius:8px 8px 0 0;font:13px Consolas,monospace}
+.file a{color:var(--acc);font-family:inherit;white-space:nowrap}.file span{overflow-wrap:anywhere}
+.file+pre{border-top-left-radius:0;border-top-right-radius:0;margin-top:6px}
+pre{position:relative;background:var(--code);padding:34px 14px 12px;border-radius:8px;overflow-x:auto;border:1px solid var(--line)}
+pre code{background:none;padding:0;font-size:14px;line-height:1.55}
+pre code.hljs{padding:0;background:none}
+.copy{position:absolute;top:6px;right:6px;font-size:12px;padding:3px 9px;border-radius:6px;border:1px solid var(--line);
+background:var(--card);color:var(--ink);cursor:pointer;opacity:.85}.copy:hover{opacity:1}.copy.ok{background:#2da44e;color:#fff;border-color:#2da44e}
+.pager{display:flex;gap:12px;justify-content:space-between;margin-top:48px;padding-top:20px;border-top:1px solid var(--line)}
+.pager a{flex:1;padding:12px 14px;border:1px solid var(--line);border-radius:10px;text-decoration:none;color:var(--ink);background:var(--card)}
+.pager a small{display:block;color:var(--sub)}.pager .next{text-align:right}
+select.jump{display:none;width:100%;font-size:16px;padding:8px;margin-bottom:12px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--ink)}
+@media (max-width:860px){.doc{display:block;padding-top:16px}.side{display:none}select.jump{display:block}article h1{font-size:23px}
+header.top .hide-s{display:none}}
+.hero{background:var(--navy);color:#fff;padding:44px 0 36px}
+.hero h1{font-size:38px;margin:0 0 10px;line-height:1.25}.hero h1 b{color:var(--acc)}
+.hero p{margin:6px 0;color:#c9d4e0;max-width:760px}.hero .cta{display:flex;flex-wrap:wrap;gap:10px;margin-top:22px}
+.cta a{padding:11px 18px;border-radius:10px;text-decoration:none;font-weight:700}
+.cta .main{background:var(--acc);color:#111}.cta .sub{border:1px solid #ffffff66;color:#fff}
+.hero .twin{margin-top:16px;font-size:14px}.hero .twin a{color:var(--acc)}
+section{padding:36px 0 8px}section h2{font-size:24px;margin:0 0 6px}section .lead{color:var(--sub);margin:0 0 18px}
+.course{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:22px}
+.course>div{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px}
+.course h3{margin:0 0 4px;font-size:21px}.course .pdf{font-size:14px}
+.course ol{list-style:none;padding:0;margin:12px 0 0}
+.course li a{display:flex;gap:10px;align-items:center;padding:6px 8px;border-radius:8px;text-decoration:none;color:var(--ink)}
+.course li a:hover{background:var(--line)}
+.course li img{width:72px;height:44px;object-fit:cover;object-position:left top;border:1px solid var(--line);border-radius:5px;background:#fff;flex:none}
+.course li .noimg{width:72px;height:44px;border-radius:5px;background:var(--code);flex:none}
+.dl{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px}
+.dl a{display:block;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 14px;text-decoration:none;color:var(--ink)}
+.dl a:hover{border-color:var(--acc)}.dl b{font-family:Consolas,monospace}.dl small{display:block;color:var(--sub)}
+footer{padding:40px 0 50px;color:var(--sub);font-size:14px;text-align:center}
+@media (max-width:600px){.hero h1{font-size:28px}.course{grid-template-columns:1fr}}
+
+.overview{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px}
+.overview img{border:none}
+.course .lead2{color:var(--sub);font-size:14px;margin:2px 0 6px}
+</style></head><body>
+<header class="top"><div class="in">
+<a class="logo" href="../index.html">React + Spring <b>배포</b></a><span class="sp"></span>
+<a class="btn hide-s" href="../guide/ch00.html">교안</a>
+<a class="btn" href="../index.html#pdf">PDF</a>
+<a class="btn" href="https://github.com/sinaboro/react-spring-msa-deploy" target="_blank">GitHub</a>
+</div></header>
+<div class="doc">
+<nav class="side"><div class="cap">배포</div><a href="ch00.html">0장 과정 안내</a><a href="ch01.html">1장 배포를 위해 바꾼 코드</a><a href="ch02.html">2장 Docker 이미지 만들기</a><a href="ch03.html" class=on>3장 Docker Hub 에 이미지 올리기</a><a href="ch04.html">4장 AWS EC2 만들기</a><a href="ch05.html">5장 서버 준비와 첫 배포</a><a href="ch06.html">6장 GitHub Actions - 비밀 값 넣기와 워크플로 읽기</a><a href="ch07.html">7장 자동 배포 확인 - push 하면 서버가 바뀐다</a><a href="ch08.html">8장 정리와 삭제 - 요금이 나가지 않게</a><a href="appA.html">부록 A 오류 해결</a><a href="appB.html">부록 B 확인 문제 풀이</a><div class="other"><a href="../index.html">← 첫 화면</a><a href="../React_Spring_MSA_%EB%B0%B0%ED%8F%AC_%ED%95%99%EC%8A%B5%EA%B5%90%EC%95%88.pdf" target="_blank">PDF 교안</a></div></nav>
+<article>
+<select class="jump" onchange="location.href=this.value" aria-label="장 이동"><option value="ch00.html">0장 과정 안내</option><option value="ch01.html">1장 배포를 위해 바꾼 코드</option><option value="ch02.html">2장 Docker 이미지 만들기</option><option value="ch03.html" selected>3장 Docker Hub 에 이미지 올리기</option><option value="ch04.html">4장 AWS EC2 만들기</option><option value="ch05.html">5장 서버 준비와 첫 배포</option><option value="ch06.html">6장 GitHub Actions - 비밀 값 넣기와 워크플로 읽기</option><option value="ch07.html">7장 자동 배포 확인 - push 하면 서버가 바뀐다</option><option value="ch08.html">8장 정리와 삭제 - 요금이 나가지 않게</option><option value="appA.html">부록 A 오류 해결</option><option value="appB.html">부록 B 확인 문제 풀이</option></select>
+<h1 id="3장-docker-hub-에-이미지-올리기">3장. Docker Hub 에 이미지 올리기</h1>
+<h2 id="학습-목표">학습 목표</h2>
+<ul>
+<li>이미지 이름 <code>사용자이름/저장소:태그</code> 의 뜻을 안다.</li>
+<li>Docker Hub <strong>Access Token</strong> 을 만들고, 권한(Read &amp; Write)을 바르게 고른다.</li>
+<li>내 PC 에서 만든 이미지 4개를 Docker Hub 에 올린다(push).</li>
+</ul>
+<h2 id="3-1-이미지-이름-읽기">3-1. 이미지 이름 읽기</h2>
+<pre><code class="language-text">rlaeocjf / msa-user-service : latest
+└─ 사용자 이름  └─ 저장소(이미지) 이름  └─ 태그(버전 이름)
+</code></pre>
+<ul>
+<li><strong>사용자 이름</strong>: Docker Hub 계정 이름. 다른 사람의 이름으로는 올릴 수 없다.</li>
+<li><strong>저장소 이름</strong>: 이미지마다 하나. 처음 push 하면 Docker Hub 에 저절로 생긴다.</li>
+<li><strong>태그</strong>: 같은 저장소 안의 버전 이름. <code>latest</code> 는 "가장 최근" 이라는 약속일 뿐 특별한 기능은 없다. 6장의 GitHub Actions 는 <code>latest</code> 와 함께 <strong>커밋 번호</strong> 태그도 붙여서 "어느 코드로 만든 이미지인지" 를 남긴다.</li>
+</ul>
+<p><code>postgres:18</code> 처럼 사용자 이름이 없는 이미지는 Docker 가 관리하는 <strong>공식 이미지</strong>다.</p>
+<h2 id="3-2-access-token-만들기">3-2. Access Token 만들기</h2>
+<p>Docker Hub 에 로그인할 때 비밀번호 대신 <strong>Access Token</strong>(접근 토큰)을 쓴다. 토큰은 권한을 좁게 줄 수 있고, 잃어버리면 그 토큰만 지우면 된다. 6장에서 GitHub Actions 도 이 토큰으로 로그인한다.</p>
+<ol>
+<li>https://hub.docker.com 에 로그인한다.</li>
+<li>오른쪽 위 프로필 → <strong>Account settings</strong> → 왼쪽 <strong>Personal access tokens</strong> → <strong>Generate new token</strong>.</li>
+<li>설명(Description)에 <code>msa-deploy</code> 처럼 적는다. 만료 기간은 실습 기간에 맞게 고른다.</li>
+<li><strong>Access permissions 는 <code>Read &amp; Write</code></strong> 를 고른다. ← 가장 중요</li>
+<li><strong>Generate</strong> → 나온 토큰(<code>dckr_pat_...</code>)을 복사한다. <strong>이 화면을 닫으면 다시 볼 수 없다.</strong> 메모장에 잠깐 붙여 두고, 6장에서 GitHub Secrets 에 넣은 뒤 지운다.</li>
+</ol>
+<blockquote class="note">
+<p><strong>권한을 <code>Read-only</code> 로 만들면 push 가 막힌다.</strong> 교안을 만들 때 실제로 겪은 실수다. GitHub Actions 로그에 이런 줄이 나온다.</p>
+<p><code>unexpected status from HEAD request to ...: 401 Unauthorized ... insufficient scopes</code></p>
+<p>로그인(login)은 성공하므로 헷갈리기 쉽다. 토큰을 <code>Read &amp; Write</code> 로 새로 만들어 바꾸면 된다.</p>
+</blockquote>
+<p>토큰은 비밀번호와 같다. 화면 캡처, 카톡, GitHub 코드 어디에도 남기지 않는다.</p>
+<h2 id="3-3-로그인하고-올리기">3-3. 로그인하고 올리기</h2>
+<p><strong>[PS]</strong> Docker Hub 로그인 - 비밀번호를 물으면 <strong>토큰</strong>을 붙여 넣는다 (화면에 보이지 않는 것이 정상)</p>
+<pre><code class="language-powershell">docker login -u &lt;내DockerHub아이디&gt;
+</code></pre>
+<pre><code class="language-text">Password:
+Login Succeeded
+</code></pre>
+<p>2장에서 만든 이미지 이름은 <code>local/msa-...</code> 였다. 내 사용자 이름으로 다시 굽자. 저장소 폴더에 <code>.env</code> 파일을 만들면 compose 가 자동으로 읽는다.</p>
+<p><strong>[PS]</strong> <code>.env</code> 만들기 - <code>.env.example</code> 을 복사해서 사용자 이름만 바꾼다</p>
+<pre><code class="language-powershell">copy .env.example .env
+notepad .env          # DOCKERHUB_USERNAME=&lt;내DockerHub아이디&gt; 로 고치고 저장
+docker compose config --images
+</code></pre>
+<pre><code class="language-text">rlaeocjf/msa-user-service:latest
+rlaeocjf/msa-post-service:latest
+rlaeocjf/msa-api-gateway:latest
+rlaeocjf/msa-frontend:latest
+postgres:18
+</code></pre>
+<p>이름이 내 아이디로 바뀌었으면 빌드하고 올린다. 2장에서 한 번 빌드했으므로 캐시 덕분에 빠르다.</p>
+<p><strong>[PS]</strong> 빌드 후 4개만 push (postgres:18 은 남의 공식 이미지라 올리지 않는다)</p>
+<pre><code class="language-powershell">docker compose build
+docker compose push user-service post-service api-gateway frontend
+</code></pre>
+<pre><code class="language-text">[+] Pushing 4/4
+ ✔ Pushing rlaeocjf/msa-user-service:latest
+ ✔ Pushing rlaeocjf/msa-post-service:latest
+ ✔ Pushing rlaeocjf/msa-api-gateway:latest
+ ✔ Pushing rlaeocjf/msa-frontend:latest
+</code></pre>
+<blockquote class="note">
+<p>서비스 이름을 적어 <strong>우리 것 4개만</strong> 고른다. <code>db</code> 의 <code>postgres:18</code> 은 남의 이미지라 우리 계정으로 올릴 수 없고, 올릴 까닭도 없다. 서버도 Docker Hub 에서 공식 이미지를 바로 받는다.</p>
+</blockquote>
+<p>https://hub.docker.com 의 내 프로필(Repositories)에 저장소 4개가 생겼다. 처음 push 한 저장소는 <strong>공개(Public)</strong> 로 만들어진다. 공개 이미지는 누구나 받을(pull) 수 있지만, 올리기(push)는 나만 할 수 있다.</p>
+<figure><a href="../images/c03_dockerhub_repos.jpg" target="_blank"><img src="../images/c03_dockerhub_repos.jpg" alt="Docker Hub - 처음 push 하면 저장소가 저절로 생긴다 (공개)" loading="lazy"></a><figcaption>Docker Hub - 처음 push 하면 저장소가 저절로 생긴다 (공개)</figcaption></figure>
+<blockquote class="note">
+<p><strong>[배포 개념] 이미지 창고(레지스트리)가 있으면 빌드와 실행을 나눌 수 있다.</strong> 빌드는 힘이 센 컴퓨터(내 PC, GitHub Actions)에서 하고, 메모리 1GB 짜리 서버는 <strong>다 만든 이미지를 받아서 켜기만</strong> 한다. 서버에 JDK, Gradle, Node.js, 소스 코드가 하나도 필요 없다.</p>
+<p><strong>이미지 안에 비밀 값이 있으면 안 된다.</strong> 공개 이미지는 누구나 받아서 열어 볼 수 있다. 이 교안의 이미지에는 비밀번호·열쇠가 없고, 서버에서 켤 때 환경 변수로 넣는다(1장). Dockerfile 에 <code>ENV DB_PASSWORD=...</code> 같은 줄을 쓰지 않는 까닭이다.</p>
+</blockquote>
+<h2 id="확인-문제">확인 문제</h2>
+<ol>
+<li><code>rlaeocjf/msa-frontend:latest</code> 에서 사용자 이름, 저장소 이름, 태그는 각각 무엇인가?</li>
+<li><code>docker login</code> 은 성공했는데 push 할 때 <code>insufficient scopes</code> 가 나왔다. 무엇을 고쳐야 하나?</li>
+<li>공개 저장소에 올린 이미지에 DB 비밀번호가 들어 있으면 왜 위험한가?</li>
+</ol>
+<nav class="pager"><a href="ch02.html"><small>← 이전</small>2장 Docker 이미지 만들기</a><a class="next" href="ch04.html"><small>다음 →</small>4장 AWS EC2 만들기</a></nav>
+</article></div>
+<footer>React + Spring MSA 배포 실습 - Docker · AWS EC2 · GitHub Actions · 배포 · 강사 김대철 · <a href="https://github.com/sinaboro/react-spring-msa-deploy">GitHub</a></footer>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css" media="(prefers-color-scheme: light)">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css" media="(prefers-color-scheme: dark)">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/powershell.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/dockerfile.min.js"></script>
+<script>
+document.querySelectorAll('pre code').forEach(function(el){
+  if(window.hljs && !/language-(text|plaintext)/.test(el.className)){ try{ hljs.highlightElement(el); }catch(e){} }
+  var b=document.createElement('button'); b.className='copy'; b.textContent='복사';
+  b.onclick=function(){                       // 코드 상자의 글자를 그대로 클립보드에 복사
+    navigator.clipboard.writeText(el.innerText).then(function(){
+      b.textContent='복사됨'; b.classList.add('ok');
+      setTimeout(function(){ b.textContent='복사'; b.classList.remove('ok'); },1500);
+    });
+  };
+  el.parentNode.appendChild(b);
+});
+</script>
+</body></html>

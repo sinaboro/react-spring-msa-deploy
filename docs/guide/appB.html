@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>부록 B. 확인 문제 풀이 - 배포</title>
+<meta name="description" content="[react-spring-mas-postgresql](https://github.com/sinaboro/react-spring-mas-postgresql) 기초 과정의 MSA 로그인 게시판을 Docker 이미지로 만들어 Docker Hub 에 올리고, AWS EC2 에 배포한 뒤, push 하면 자동으로 배포되게(CI/CD) 하는 교안과 실습 코드입니다.">
+<meta property="og:title" content="부록 B. 확인 문제 풀이 - 배포"><meta property="og:description" content="[react-spring-mas-postgresql](https://github.com/sinaboro/react-spring-mas-postgresql) 기초 과정의 MSA 로그인 게시판을 Docker 이미지로 만들어 Docker Hub 에 올리고, AWS EC2 에 배포한 뒤, push 하면 자동으로 배포되게(CI/CD) 하는 교안과 실습 코드입니다."><meta property="og:image" content="https://sinaboro.github.io/react-spring-msa-deploy/images/fig_deploy_overview.png">
+<meta property="og:type" content="website">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='-12 -12 24 24'%3E%3Cg fill='none' stroke='%2361dafb' stroke-width='1.6'%3E%3Cellipse rx='10' ry='4'/%3E%3Cellipse rx='10' ry='4' transform='rotate(60)'/%3E%3Cellipse rx='10' ry='4' transform='rotate(120)'/%3E%3C/g%3E%3Ccircle r='2' fill='%2361dafb'/%3E%3C/svg%3E">
+<script>
+if(/KAKAOTALK/i.test(navigator.userAgent)){location.href='kakaotalk://web/openExternal?url='+encodeURIComponent(location.href);}
+</script>
+<style>
+:root{--ink:#1f2328;--sub:#59636e;--line:#e3e6ea;--bg:#f7f8fa;--card:#fff;--navy:#16202e;--acc:#61dafb;--acc2:#0b7fab;
+--note:#eef8fc;--noteline:#61dafb;--code:#f3f5f7;--link:#0969da}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--ink:#e6edf3;--sub:#9da7b3;--line:#30363d;--bg:#0f141a;
+--card:#161b22;--navy:#0b1017;--note:#10232b;--noteline:#2a8fb0;--code:#1b222b;--link:#58a6ff;--acc2:#61dafb}}
+*{box-sizing:border-box}html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.75 "Pretendard","Malgun Gothic","Apple SD Gothic Neo",sans-serif;word-break:keep-all}
+a{color:var(--link)}img{max-width:100%;height:auto}
+header.top{background:var(--navy);color:#fff;position:sticky;top:0;z-index:5}
+header.top .in{max-width:1180px;margin:0 auto;padding:10px 16px;display:flex;gap:10px;align-items:center}
+header.top a{color:#fff;text-decoration:none}.logo{font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.logo b{color:var(--acc)}
+header.top .sp{flex:1}header.top .btn{font-size:14px;border:1px solid #ffffff55;border-radius:8px;padding:4px 10px;white-space:nowrap}
+.wrap{max-width:1180px;margin:0 auto;padding:0 16px}
+.doc{display:grid;grid-template-columns:250px minmax(0,1fr);gap:32px;padding:24px 16px 60px;max-width:1180px;margin:0 auto}
+.side{position:sticky;top:64px;align-self:start;max-height:calc(100vh - 80px);overflow:auto;font-size:14px}
+.side .cap{font-weight:800;margin:4px 10px 6px;color:var(--sub)}
+.side a{display:block;padding:5px 10px;border-radius:6px;color:var(--ink);text-decoration:none;line-height:1.45}
+.side a.on{background:var(--acc);color:#111;font-weight:700}.side a:hover:not(.on){background:var(--line)}
+.side .other{margin-top:14px;border-top:1px solid var(--line);padding-top:10px}
+article{min-width:0}
+article h1{font-size:28px;line-height:1.35;margin:0 0 20px;padding-bottom:12px;border-bottom:4px solid var(--acc)}
+article h2{font-size:22px;margin:40px 0 12px;padding-left:10px;border-left:5px solid var(--acc2)}
+article h3{font-size:18px;margin:28px 0 8px}
+figure{margin:18px 0;text-align:center}figure img{border:1px solid var(--line);border-radius:8px;background:#fff}
+figcaption{font-size:13px;color:var(--sub);margin-top:6px}
+.tbl{overflow-x:auto;margin:14px 0}table{border-collapse:collapse;width:100%;font-size:15px}
+th{background:var(--navy);color:#fff;text-align:left}th,td{padding:7px 10px;border:1px solid var(--line);vertical-align:top}
+blockquote.note{margin:16px 0;padding:10px 16px;background:var(--note);border-left:5px solid var(--noteline);border-radius:6px}
+blockquote.note p{margin:6px 0}
+code{background:var(--code);padding:1px 5px;border-radius:4px;font-family:Consolas,"D2Coding",monospace;font-size:.92em}
+.file{display:flex;justify-content:space-between;gap:10px;align-items:center;margin:18px 0 -6px;padding:6px 12px;
+background:var(--navy);color:#dfe6ee;border-radius:8px 8px 0 0;font:13px Consolas,monospace}
+.file a{color:var(--acc);font-family:inherit;white-space:nowrap}.file span{overflow-wrap:anywhere}
+.file+pre{border-top-left-radius:0;border-top-right-radius:0;margin-top:6px}
+pre{position:relative;background:var(--code);padding:34px 14px 12px;border-radius:8px;overflow-x:auto;border:1px solid var(--line)}
+pre code{background:none;padding:0;font-size:14px;line-height:1.55}
+pre code.hljs{padding:0;background:none}
+.copy{position:absolute;top:6px;right:6px;font-size:12px;padding:3px 9px;border-radius:6px;border:1px solid var(--line);
+background:var(--card);color:var(--ink);cursor:pointer;opacity:.85}.copy:hover{opacity:1}.copy.ok{background:#2da44e;color:#fff;border-color:#2da44e}
+.pager{display:flex;gap:12px;justify-content:space-between;margin-top:48px;padding-top:20px;border-top:1px solid var(--line)}
+.pager a{flex:1;padding:12px 14px;border:1px solid var(--line);border-radius:10px;text-decoration:none;color:var(--ink);background:var(--card)}
+.pager a small{display:block;color:var(--sub)}.pager .next{text-align:right}
+select.jump{display:none;width:100%;font-size:16px;padding:8px;margin-bottom:12px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--ink)}
+@media (max-width:860px){.doc{display:block;padding-top:16px}.side{display:none}select.jump{display:block}article h1{font-size:23px}
+header.top .hide-s{display:none}}
+.hero{background:var(--navy);color:#fff;padding:44px 0 36px}
+.hero h1{font-size:38px;margin:0 0 10px;line-height:1.25}.hero h1 b{color:var(--acc)}
+.hero p{margin:6px 0;color:#c9d4e0;max-width:760px}.hero .cta{display:flex;flex-wrap:wrap;gap:10px;margin-top:22px}
+.cta a{padding:11px 18px;border-radius:10px;text-decoration:none;font-weight:700}
+.cta .main{background:var(--acc);color:#111}.cta .sub{border:1px solid #ffffff66;color:#fff}
+.hero .twin{margin-top:16px;font-size:14px}.hero .twin a{color:var(--acc)}
+section{padding:36px 0 8px}section h2{font-size:24px;margin:0 0 6px}section .lead{color:var(--sub);margin:0 0 18px}
+.course{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:22px}
+.course>div{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px}
+.course h3{margin:0 0 4px;font-size:21px}.course .pdf{font-size:14px}
+.course ol{list-style:none;padding:0;margin:12px 0 0}
+.course li a{display:flex;gap:10px;align-items:center;padding:6px 8px;border-radius:8px;text-decoration:none;color:var(--ink)}
+.course li a:hover{background:var(--line)}
+.course li img{width:72px;height:44px;object-fit:cover;object-position:left top;border:1px solid var(--line);border-radius:5px;background:#fff;flex:none}
+.course li .noimg{width:72px;height:44px;border-radius:5px;background:var(--code);flex:none}
+.dl{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px}
+.dl a{display:block;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 14px;text-decoration:none;color:var(--ink)}
+.dl a:hover{border-color:var(--acc)}.dl b{font-family:Consolas,monospace}.dl small{display:block;color:var(--sub)}
+footer{padding:40px 0 50px;color:var(--sub);font-size:14px;text-align:center}
+@media (max-width:600px){.hero h1{font-size:28px}.course{grid-template-columns:1fr}}
+
+.overview{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px}
+.overview img{border:none}
+.course .lead2{color:var(--sub);font-size:14px;margin:2px 0 6px}
+</style></head><body>
+<header class="top"><div class="in">
+<a class="logo" href="../index.html">React + Spring <b>배포</b></a><span class="sp"></span>
+<a class="btn hide-s" href="../guide/ch00.html">교안</a>
+<a class="btn" href="../index.html#pdf">PDF</a>
+<a class="btn" href="https://github.com/sinaboro/react-spring-msa-deploy" target="_blank">GitHub</a>
+</div></header>
+<div class="doc">
+<nav class="side"><div class="cap">배포</div><a href="ch00.html">0장 과정 안내</a><a href="ch01.html">1장 배포를 위해 바꾼 코드</a><a href="ch02.html">2장 Docker 이미지 만들기</a><a href="ch03.html">3장 Docker Hub 에 이미지 올리기</a><a href="ch04.html">4장 AWS EC2 만들기</a><a href="ch05.html">5장 서버 준비와 첫 배포</a><a href="ch06.html">6장 GitHub Actions - 비밀 값 넣기와 워크플로 읽기</a><a href="ch07.html">7장 자동 배포 확인 - push 하면 서버가 바뀐다</a><a href="ch08.html">8장 정리와 삭제 - 요금이 나가지 않게</a><a href="appA.html">부록 A 오류 해결</a><a href="appB.html" class=on>부록 B 확인 문제 풀이</a><div class="other"><a href="../index.html">← 첫 화면</a><a href="../React_Spring_MSA_%EB%B0%B0%ED%8F%AC_%ED%95%99%EC%8A%B5%EA%B5%90%EC%95%88.pdf" target="_blank">PDF 교안</a></div></nav>
+<article>
+<select class="jump" onchange="location.href=this.value" aria-label="장 이동"><option value="ch00.html">0장 과정 안내</option><option value="ch01.html">1장 배포를 위해 바꾼 코드</option><option value="ch02.html">2장 Docker 이미지 만들기</option><option value="ch03.html">3장 Docker Hub 에 이미지 올리기</option><option value="ch04.html">4장 AWS EC2 만들기</option><option value="ch05.html">5장 서버 준비와 첫 배포</option><option value="ch06.html">6장 GitHub Actions - 비밀 값 넣기와 워크플로 읽기</option><option value="ch07.html">7장 자동 배포 확인 - push 하면 서버가 바뀐다</option><option value="ch08.html">8장 정리와 삭제 - 요금이 나가지 않게</option><option value="appA.html">부록 A 오류 해결</option><option value="appB.html" selected>부록 B 확인 문제 풀이</option></select>
+<h1 id="부록-b-확인-문제-풀이">부록 B. 확인 문제 풀이</h1>
+<h2 id="0장">0장</h2>
+<ol>
+<li><strong>이미지를 받아서 실행한다.</strong> 서버에는 소스 코드도 JDK·Node.js 도 없다. Docker Hub 에서 <code>docker compose pull</code> 로 받은 이미지를 켤 뿐이다.</li>
+<li><strong>80번</strong> 하나. frontend 컨테이너의 <strong>nginx</strong> 가 받아서 화면은 직접 주고, <code>/api</code> 는 게이트웨이로 넘긴다.</li>
+<li>무료 EC2(t3.micro)는 메모리가 1GB 다. 서비스 3개 + DB 만으로도 거의 꽉 차서 Kafka 까지 올릴 자리가 없다.</li>
+</ol>
+<h2 id="1장">1장</h2>
+<ol>
+<li>React 코드는 <strong>사용자의 브라우저에서</strong> 돈다. 그 안의 <code>localhost</code> 는 사용자 자신의 PC 이고, 그곳에는 게이트웨이(8080)가 없다.</li>
+<li>nginx 는 <code>/posts/3</code> 이라는 파일을 찾지 못해 <strong>404</strong> 를 돌려준다. <code>index.html</code> 을 줘야 React Router 가 주소를 보고 3번 글 화면을 그린다.</li>
+<li>환경 변수 <code>JWT_SECRET</code> 이 <strong>없을 때</strong>만 쓰인다. 내 PC 에서 그냥 실행할 때가 그렇다. 서버에서는 <code>.env</code> 의 값이 들어가므로 쓰이지 않는다.</li>
+</ol>
+<h2 id="2장">2장</h2>
+<ol>
+<li>실행에는 컴파일러가 필요 없기 때문이다. JRE 만 넣으면 이미지가 작아지고, 서버에서 받는 시간과 디스크가 줄어든다. 컴파일러·소스가 없으니 보안에도 낫다.</li>
+<li>Docker 는 단계마다 결과를 캐시한다. <code>build.gradle</code> 이 그대로면 "라이브러리 받기" 단계를 캐시에서 꺼내 쓰므로 소스만 고친 빌드가 훨씬 빨라진다.</li>
+<li>컨테이너 안에서 <code>localhost</code> 는 <strong>그 컨테이너 자신</strong>이다. DB 는 다른 컨테이너이므로 compose 가 만들어 준 이름 <code>db</code> 로 찾고, 포트도 컨테이너 안쪽 포트(5432)를 쓴다. <code>5435</code> 는 MSA 기초 과정에서 내 PC 에 열어 둔 바깥 포트였다.</li>
+<li>고장이 아니다. 8080 은 일부러 바깥에 열지 않았다(<code>ports</code> 없음). 모든 요청은 80(nginx)을 거쳐 들어가야 한다.</li>
+</ol>
+<h2 id="3장">3장</h2>
+<ol>
+<li>사용자 이름 <code>rlaeocjf</code>, 저장소 이름 <code>msa-frontend</code>, 태그 <code>latest</code>.</li>
+<li>토큰 권한이 Read-only 다. <strong>Read &amp; Write</strong> 토큰을 새로 만들어 <code>docker login</code> (또는 <code>DOCKERHUB_TOKEN</code> Secret)을 다시 한다.</li>
+<li>공개 이미지는 누구나 받아서 안을 열어 볼 수 있다. 비밀번호가 이미지 층(layer)이나 환경 변수에 남아 있으면 그대로 드러난다.</li>
+</ol>
+<h2 id="4장">4장</h2>
+<ol>
+<li>리전마다 화면과 자원이 따로라서, 다른 리전에 만들면 서울 화면에서는 보이지 않는다. 사용자와 먼 리전은 느리기도 하다.</li>
+<li>그 인스턴스에 다시 SSH 로 들어갈 수 없다. AWS 도 개인 키를 갖고 있지 않아 다시 내려받을 수 없다. 새 키 페어로 인스턴스를 새로 만들어야 한다.</li>
+<li>바깥에서 들어오는 문은 80(nginx)뿐이고, nginx → 게이트웨이 → 서비스 → DB 는 <strong>EC2 안의 도커 네트워크</strong>로 오간다. 보안 그룹은 EC2 바깥의 문만 지킨다.</li>
+</ol>
+<h2 id="5장">5장</h2>
+<ol>
+<li>5-1 의 <code>icacls</code> 로 상속 권한을 지우고(<code>/inheritance:r</code>) 나에게만 읽기 권한을 준다.</li>
+<li>사용자가 속한 그룹은 <strong>로그인할 때</strong> 정해진다. 이미 열린 접속에는 새 그룹(docker)이 반영되지 않는다.</li>
+<li>아니다. Spring 서비스가 아직 켜지는 중이다. 30초~1분 기다렸다가 새로 고침한다. 계속 502 면 <code>docker compose ps</code>, <code>logs</code> 를 본다.</li>
+<li><code>.env</code> 를 빠뜨렸을 때 약한 기본 비밀번호로 조용히 켜지는 사고를 막기 위해서다. 값이 없으면 바로 오류를 내고 멈춘다.</li>
+</ol>
+<h2 id="6장">6장</h2>
+<ol>
+<li>Variables 는 로그에 그대로 보이고, Secrets 는 암호화되어 로그에 <code>***</code> 로 가려지며 다시 볼 수도 없다. <code>EC2_HOST</code> 는 브라우저로 누구나 접속하는 공개 주소라 숨길 까닭이 없고, 로그에서 어디로 배포했는지 보이는 편이 오류를 찾기 쉽다.</li>
+<li>deploy 잡은 <code>needs: build</code> 라서 <strong>시작하지 않는다</strong>(건너뜀). 서버는 예전 버전 그대로 돈다.</li>
+<li><strong>502</strong>: nginx 는 켜졌지만 api-gateway 가 아직 응답하지 않는다. <strong>503</strong>: 게이트웨이는 켜졌지만 뒤의 post-service 가 아직 준비되지 않았다.</li>
+<li>PostgreSQL 은 처음 만든 비밀번호를 그대로 쓰므로, 서비스가 새 비밀번호로 접속하다 <code>password authentication failed</code> 로 실패한다. 배포 확인 스텝이 3분 뒤 실패한다.</li>
+</ol>
+<h2 id="7장">7장</h2>
+<ol>
+<li>9시간 이른 <strong>오전 6시</strong>로 저장된다. (UTC = KST - 9시간)</li>
+<li>시간대 설정은 앞으로 저장할 시각에만 영향을 준다. 이미 DB 에 저장된 값은 그대로다.</li>
+<li>GitHub Variables 의 <code>EC2_HOST</code> 를 새 퍼블릭 IP 로 바꾸고 Run workflow 로 다시 돌린다.</li>
+<li><strong>중지</strong>는 껐다 켤 수 있고 디스크(데이터)가 남는다(IP 는 바뀐다). <strong>종료</strong>는 인스턴스를 버리는 것이라 디스크까지 지워지고 되돌릴 수 없다.</li>
+</ol>
+<h2 id="8장">8장</h2>
+<ol>
+<li>아니다. 컴퓨터 요금은 멈추지만 디스크(EBS 20GiB) 요금은 계속 나간다. 실습이 끝났으면 <strong>종료</strong>한다.</li>
+<li>인스턴스가 "종료됨" 상태가 될 때까지 기다린다. 몇 분 뒤 다시 지운다.</li>
+<li>Variables 의 <code>EC2_HOST</code> 를 지운다. deploy 잡이 <code>if:</code> 조건으로 건너뛰어진다.</li>
+<li>어느 코드로 만든 이미지인지 알 수 있고, 문제가 생기면 그 태그로 예전 버전을 바로 다시 켤 수 있다.</li>
+</ol>
+<nav class="pager"><a href="appA.html"><small>← 이전</small>부록 A 오류 해결</a><a class="next" href="../index.html"><small>처음으로 →</small>첫 화면</a></nav>
+</article></div>
+<footer>React + Spring MSA 배포 실습 - Docker · AWS EC2 · GitHub Actions · 배포 · 강사 김대철 · <a href="https://github.com/sinaboro/react-spring-msa-deploy">GitHub</a></footer>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css" media="(prefers-color-scheme: light)">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css" media="(prefers-color-scheme: dark)">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/powershell.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/dockerfile.min.js"></script>
+<script>
+document.querySelectorAll('pre code').forEach(function(el){
+  if(window.hljs && !/language-(text|plaintext)/.test(el.className)){ try{ hljs.highlightElement(el); }catch(e){} }
+  var b=document.createElement('button'); b.className='copy'; b.textContent='복사';
+  b.onclick=function(){                       // 코드 상자의 글자를 그대로 클립보드에 복사
+    navigator.clipboard.writeText(el.innerText).then(function(){
+      b.textContent='복사됨'; b.classList.add('ok');
+      setTimeout(function(){ b.textContent='복사'; b.classList.remove('ok'); },1500);
+    });
+  };
+  el.parentNode.appendChild(b);
+});
+</script>
+</body></html>
