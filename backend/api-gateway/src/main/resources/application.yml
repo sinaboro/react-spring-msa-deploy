@@ -1,0 +1,46 @@
+# application.yml - API 게이트웨이 설정
+#
+# [MSA 개념] API 게이트웨이 = 모든 요청이 들어오는 "정문"
+#   React 는 서비스가 몇 개인지, 각각 몇 번 포트인지 몰라도 된다. 항상 8080 하나로만 요청한다.
+#   게이트웨이가 주소를 보고 알맞은 서비스로 전달해 준다 (라우팅).
+#
+#     React ── http://localhost:8080/api/auth/login ──▶ 게이트웨이 ──▶ user-service (8081)
+#     React ── http://localhost:8080/api/posts      ──▶ 게이트웨이 ──▶ post-service (8082)
+
+server:
+  port: 8080                     # 모놀리식 판의 서버와 같은 포트 → React 의 API_URL 을 바꿀 필요가 없다
+
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      server:
+        webflux:
+          # ---- 1. 라우팅 규칙: "이런 주소(predicates)는 저기(uri)로 보내라" ----
+          routes:
+            - id: user-service
+              uri: ${USER_SERVICE_URL:http://localhost:8081}
+              predicates:
+                - Path=/api/auth/**          # 회원가입 · 로그인 · 내 정보
+            - id: post-service
+              uri: ${POST_SERVICE_URL:http://localhost:8082}
+              predicates:
+                - Path=/api/posts/**         # 게시글 (/api/posts 자체도 포함된다)
+
+          # ---- 2. CORS: React 개발 서버(5173)에서 오는 요청 허락 ----
+          #   브라우저는 정문(게이트웨이)만 보므로 CORS 도 여기 한 곳에서만 설정한다.
+          #   (각 서비스에는 CORS 설정이 없다)
+          globalcors:
+            cors-configurations:
+              '[/api/**]':
+                allowed-origins:
+                  - http://localhost:5173
+                  - http://127.0.0.1:5173
+                allowed-methods: [GET, POST, PUT, DELETE]
+                allowed-headers: "*"     # Authorization 헤더(토큰)도 보낼 수 있게
+
+# JWT 설정 - user-service 의 jwt.secret 과 반드시 같은 값이어야 한다
+#   (user-service 가 이 열쇠로 서명한 토큰을, 게이트웨이가 같은 열쇠로 검사한다)
+jwt:
+  secret: ${JWT_SECRET:dev-only-secret-change-me-0123456789abcdef}

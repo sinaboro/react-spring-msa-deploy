@@ -1,0 +1,5 @@
+# Docker 빌드에 보내지 않을 것 (빌드가 빨라지고, 내 PC 의 빌드 결과가 섞이지 않는다)
+.gradle
+build
+*/build
+.idea

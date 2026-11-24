@@ -1,0 +1,17 @@
+# 비밀 값 - 절대 GitHub 에 올리지 않는다
+.env
+*.pem
+
+# 빌드 결과·패키지 (각 폴더의 .gitignore 에도 있다)
+node_modules/
+dist/
+build/
+.gradle/
+
+# 편집기
+.idea/
+*.iml
+.vscode/
+
+# 교안 빌드용 파이썬 캐시
+__pycache__/

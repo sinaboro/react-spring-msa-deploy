@@ -1,0 +1,24 @@
+// build.gradle (api-gateway) - 게이트웨이에 필요한 라이브러리
+//
+//   spring-cloud-starter-gateway-server-webflux : Spring Cloud Gateway
+//       들어온 요청을 주소 규칙(routes)에 따라 다른 서버로 "전달" 해 주는 프로그램.
+//       application.yml 에 규칙만 적으면 전달 코드는 직접 짤 필요가 없다.
+//   jjwt : 로그인 토큰이 진짜인지 "검사" 한다 (토큰을 만드는 쪽은 user-service)
+//
+// DB 관련 라이브러리가 없다 → 게이트웨이는 데이터를 저장하지 않는다.
+// 웹 MVC 대신 WebFlux 기반이라 코드에 Mono 라는 낯선 이름이 조금 나온다 (AuthFilter 주석 참고).
+
+dependencies {
+	implementation 'org.springframework.cloud:spring-cloud-starter-gateway-server-webflux'
+	implementation 'io.jsonwebtoken:jjwt-api:0.13.0'
+	runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.13.0'
+	runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.13.0'
+}
+
+// Spring Cloud 라이브러리 묶음의 버전 (Spring Boot 4.0 ~ 4.1 과 짝이 맞는 버전)
+//   위에서 gateway 라이브러리 버전을 적지 않아도 이 묶음이 알맞은 버전을 골라 준다.
+dependencyManagement {
+	imports {
+		mavenBom 'org.springframework.cloud:spring-cloud-dependencies:2025.1.5'
+	}
+}

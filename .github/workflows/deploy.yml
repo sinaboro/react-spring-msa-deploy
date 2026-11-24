@@ -1,0 +1,125 @@
+# =====================================================================
+# deploy.yml - main 브랜치에 push 하면 자동으로 "빌드 → Docker Hub → EC2 배포"
+#
+# 흐름
+#   ① build  : 이미지 4개를 동시에(matrix) 만들어 Docker Hub 에 올린다
+#   ② deploy : EC2 에 SSH 로 접속해 새 이미지를 받아(pull) 다시 켠다(up -d)
+#   ③ 확인   : http://EC2주소/api/posts 가 200 을 돌려줄 때까지 기다린다
+#
+# 저장소 Settings → Secrets and variables → Actions 에 미리 넣어 둘 값
+#   Variables (비밀 아님, 로그에 그대로 보임)
+#     DOCKERHUB_USERNAME  Docker Hub 사용자 이름        예) rlaeocjf
+#     EC2_HOST            EC2 공인 IP 또는 주소          예) 3.35.xx.xx
+#     EC2_USER            EC2 로그인 사용자              Ubuntu 이미지는 ubuntu
+#   Secrets (비밀, 로그에 *** 로 가려짐)
+#     DOCKERHUB_TOKEN     Docker Hub Access Token (Read & Write)
+#     EC2_SSH_KEY         EC2 키 페어 .pem 파일의 내용 전체
+#     DB_PASSWORD         운영 DB 비밀번호 (아무 긴 글자)
+#     JWT_SECRET          JWT 서명 열쇠 (32글자 이상)
+# =====================================================================
+
+name: deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:          # Actions 화면의 "Run workflow" 단추로 직접 실행할 수도 있게
+
+jobs:
+  # ---------------------------------------------------------------- ① 이미지 빌드·업로드
+  build:
+    # 아직 Variables 를 넣지 않았으면(저장소를 막 만들었거나 포크했을 때) 건너뛴다 → 빨간 실패 표시가 생기지 않는다
+    if: ${{ vars.DOCKERHUB_USERNAME != '' }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:                 # 아래 4가지를 동시에 실행한다 (작업 4개가 나란히 돈다)
+        include:
+          - image: msa-user-service
+            context: backend
+            service: user-service
+          - image: msa-post-service
+            context: backend
+            service: post-service
+          - image: msa-api-gateway
+            context: backend
+            service: api-gateway
+          - image: msa-frontend
+            context: frontend
+            service: ""
+    steps:
+      - name: 소스 받기
+        uses: actions/checkout@v5
+
+      - name: Docker Buildx 준비
+        uses: docker/setup-buildx-action@v3
+
+      - name: Docker Hub 로그인
+        uses: docker/login-action@v3
+        with:
+          username: ${{ vars.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: 이미지 빌드 후 Docker Hub 에 올리기
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.context }}
+          build-args: SERVICE=${{ matrix.service }}
+          push: true
+          # latest(늘 최신) + 커밋 번호(어느 코드로 만든 이미지인지 남기기) 두 가지 이름을 붙인다
+          tags: |
+            ${{ vars.DOCKERHUB_USERNAME }}/${{ matrix.image }}:latest
+            ${{ vars.DOCKERHUB_USERNAME }}/${{ matrix.image }}:${{ github.sha }}
+          # 빌드 중간 결과를 GitHub 에 저장해 두고 다음 빌드에서 다시 쓴다 (두 번째부터 빨라진다)
+          cache-from: type=gha,scope=${{ matrix.image }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.image }}
+
+  # ---------------------------------------------------------------- ② EC2 배포
+  deploy:
+    needs: build              # ① 이 4개 모두 성공해야 시작한다
+    if: ${{ vars.EC2_HOST != '' }}   # EC2 를 아직 만들지 않았으면 배포는 건너뛴다 (이미지만 올린다)
+    runs-on: ubuntu-latest
+    env:
+      SSH_HOST: ${{ vars.EC2_HOST }}
+      SSH_USER: ${{ vars.EC2_USER }}
+    steps:
+      - name: 소스 받기 (서버에 보낼 compose 파일, init.sql)
+        uses: actions/checkout@v5
+
+      - name: SSH 키 준비
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/ec2.pem
+          chmod 600 ~/.ssh/ec2.pem
+          # 서버의 지문(host key)을 미리 등록해 "정말 접속할까요? (yes/no)" 질문을 없앤다
+          ssh-keyscan -H "$SSH_HOST" >> ~/.ssh/known_hosts
+
+      - name: 서버에 보낼 .env 만들기 (비밀 값은 Secrets 에서)
+        run: |
+          cat > .env <<EOF
+          DOCKERHUB_USERNAME=${{ vars.DOCKERHUB_USERNAME }}
+          DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+          JWT_SECRET=${{ secrets.JWT_SECRET }}
+          EOF
+
+      - name: 파일 복사 (compose, .env, init.sql)
+        run: |
+          ssh -i ~/.ssh/ec2.pem "$SSH_USER@$SSH_HOST" "mkdir -p ~/app/db"
+          scp -i ~/.ssh/ec2.pem deploy/docker-compose.prod.yml "$SSH_USER@$SSH_HOST:~/app/docker-compose.yml"
+          scp -i ~/.ssh/ec2.pem .env "$SSH_USER@$SSH_HOST:~/app/.env"
+          scp -i ~/.ssh/ec2.pem db/init.sql "$SSH_USER@$SSH_HOST:~/app/db/init.sql"
+
+      - name: 새 이미지 받아서 다시 켜기
+        run: |
+          ssh -i ~/.ssh/ec2.pem "$SSH_USER@$SSH_HOST" "cd ~/app && docker compose pull && docker compose up -d && docker image prune -f"
+
+      # ---------------------------------------------------------------- ③ 확인
+      - name: 배포 확인 (최대 3분 기다림)
+        run: |
+          for i in $(seq 1 36); do
+            code=$(curl -s -o /dev/null -w "%{http_code}" "http://$SSH_HOST/api/posts" || true)
+            echo "$i 번째 확인: $code"
+            if [ "$code" = "200" ]; then echo "배포 성공! http://$SSH_HOST"; exit 0; fi
+            sleep 5
+          done
+          echo "3분 안에 응답이 없습니다. 서버에서 docker compose logs 를 확인하세요."
+          exit 1

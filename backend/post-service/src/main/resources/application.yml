@@ -1,0 +1,29 @@
+# application.yml - 게시글 서비스(post-service) 설정
+#   ${이름:기본값} → 환경 변수 "이름" 이 있으면 그 값, 없으면 기본값
+
+server:
+  port: 8082                     # 게이트웨이(8080)가 /api/posts/** 요청을 이 포트로 보내 준다
+
+spring:
+  servlet:
+    encoding:
+      force-response: true       # 응답에 "charset=UTF-8" 을 붙인다 → Windows PowerShell 5.1 에서도 한글이 깨지지 않는다
+  application:
+    name: post-service
+  datasource:
+    # [MSA 개념] 게시글 서비스는 postdb 에만 접속한다. userdb(회원)는 모른다.
+    #   그래서 posts.user_id 에서 users 로 외래 키(FK)를 걸 수 없고, JOIN 도 할 수 없다.
+    url: ${DB_URL:jdbc:postgresql://localhost:5435/postdb}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:postgres}   # [배포] 운영에서는 환경 변수 DB_PASSWORD 로 넣는다
+  jpa:
+    hibernate:
+      ddl-auto: update           # Post Entity 를 보고 posts 테이블을 만든다
+    show-sql: true
+    open-in-view: false
+
+# JWT 설정이 없다 - 게시글 서비스는 토큰을 다루지 않는다 (게이트웨이가 검사한다)
+
+springdoc:
+  swagger-ui:
+    path: /docs                  # http://localhost:8082/docs

@@ -1,0 +1,76 @@
+# =====================================================================
+# docker-compose.prod.yml - 서버(EC2)에서 실행하는 설정
+#
+# GitHub Actions 가 이 파일을 서버의 ~/app/docker-compose.yml 로 복사하고 아래를 실행한다.
+#   docker compose pull      Docker Hub 에서 새 이미지 받기
+#   docker compose up -d     바뀐 컨테이너만 새로 켜기
+#
+# 내 PC 용 docker-compose.yml 과 다른 점
+#   - build: 가 없다. 서버에는 소스 코드가 없고, Docker Hub 의 이미지를 받아서 쓴다.
+#   - 비밀 값(DB_PASSWORD, JWT_SECRET)은 같은 폴더의 .env 파일에서 읽는다.
+#     .env 는 GitHub Actions 가 GitHub Secrets 로 만들어 준다 (GitHub 저장소에는 올라가지 않는다).
+#   - 기본값(:-postgres 같은)을 두지 않는다. .env 가 없으면 바로 오류가 나서 실수를 알아챌 수 있다.
+# =====================================================================
+
+name: msa-deploy
+
+services:
+  db:
+    image: postgres:18
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD 가 .env 에 없습니다}
+      TZ: Asia/Seoul
+    command: ["postgres", "-c", "timezone=Asia/Seoul"]
+    volumes:
+      - db_data:/var/lib/postgresql               # 글·회원 데이터 (컨테이너를 새로 만들어도 남는다)
+      - ./db:/docker-entrypoint-initdb.d           # 처음 켤 때 userdb, postdb 생성
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d postdb"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  user-service:
+    image: ${DOCKERHUB_USERNAME:?}/msa-user-service:latest
+    restart: unless-stopped
+    environment:
+      DB_URL: jdbc:postgresql://db:5432/userdb
+      DB_PASSWORD: ${DB_PASSWORD:?}
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET 이 .env 에 없습니다}
+    depends_on:
+      db:
+        condition: service_healthy
+
+  post-service:
+    image: ${DOCKERHUB_USERNAME:?}/msa-post-service:latest
+    restart: unless-stopped
+    environment:
+      DB_URL: jdbc:postgresql://db:5432/postdb
+      DB_PASSWORD: ${DB_PASSWORD:?}
+    depends_on:
+      db:
+        condition: service_healthy
+
+  api-gateway:
+    image: ${DOCKERHUB_USERNAME:?}/msa-api-gateway:latest
+    restart: unless-stopped
+    environment:
+      USER_SERVICE_URL: http://user-service:8081
+      POST_SERVICE_URL: http://post-service:8082
+      JWT_SECRET: ${JWT_SECRET:?}
+    depends_on:
+      - user-service
+      - post-service
+
+  frontend:
+    image: ${DOCKERHUB_USERNAME:?}/msa-frontend:latest
+    restart: unless-stopped
+    ports:
+      - "80:80"                                    # 바깥(인터넷)에 열린 유일한 문
+    depends_on:
+      - api-gateway
+
+volumes:
+  db_data:

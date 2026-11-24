@@ -1,0 +1,18 @@
+// build.gradle (post-service) - 게시글 서비스에 필요한 라이브러리
+//
+//   webmvc               : REST API 만들기
+//   data-jpa + postgresql : postdb 의 posts 테이블 쓰기
+//   validation           : 글 입력 검사 (@NotBlank, @Size)
+//   springdoc            : http://localhost:8082/docs
+//
+// 눈여겨볼 점: Spring Security 도, JWT(jjwt) 도 없다!
+//   [MSA 개념] 토큰 검사는 게이트웨이가 끝내고 "X-User-Id" 헤더로 결과만 알려 준다.
+//   그래서 게시글 서비스는 게시글 일에만 집중하는 아주 단순한 서버가 된다.
+
+dependencies {
+	implementation 'org.springframework.boot:spring-boot-starter-webmvc'
+	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+	implementation 'org.springframework.boot:spring-boot-starter-validation'
+	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:3.2.0'
+	runtimeOnly 'org.postgresql:postgresql'
+}

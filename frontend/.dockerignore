@@ -1,0 +1,3 @@
+# Docker 빌드에 보내지 않을 것 (node_modules 는 이미지 안에서 npm ci 로 새로 받는다)
+node_modules
+dist
