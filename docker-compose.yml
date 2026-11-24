@@ -45,6 +45,7 @@ services:
     image: rlaeocjf/msa-user-service:latest        # 빌드한 이미지의 이름 (Docker Hub 에 이 이름으로 올린다)
     restart: unless-stopped
     environment:
+      TZ: Asia/Seoul                              # 시간대를 한국으로 (없으면 UTC 라 글 작성 시각이 9시간 늦게 보인다)
       DB_URL: jdbc:postgresql://db:5432/userdb     # localhost 가 아니라 서비스 이름 db
       DB_PASSWORD: ${DB_PASSWORD:-postgres}
       JWT_SECRET: ${JWT_SECRET:-dev-only-secret-change-me-0123456789abcdef}
@@ -61,6 +62,7 @@ services:
     image: rlaeocjf/msa-post-service:latest
     restart: unless-stopped
     environment:
+      TZ: Asia/Seoul                              # 시간대를 한국으로 (없으면 UTC 라 글 작성 시각이 9시간 늦게 보인다)
       DB_URL: jdbc:postgresql://db:5432/postdb
       DB_PASSWORD: ${DB_PASSWORD:-postgres}
     depends_on:
@@ -76,6 +78,7 @@ services:
     image: rlaeocjf/msa-api-gateway:latest
     restart: unless-stopped
     environment:
+      TZ: Asia/Seoul                              # 시간대를 한국으로 (없으면 UTC 라 글 작성 시각이 9시간 늦게 보인다)
       USER_SERVICE_URL: http://user-service:8081
       POST_SERVICE_URL: http://post-service:8082
       JWT_SECRET: ${JWT_SECRET:-dev-only-secret-change-me-0123456789abcdef}   # user-service 와 반드시 같은 값

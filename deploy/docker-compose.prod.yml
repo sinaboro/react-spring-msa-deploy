@@ -36,6 +36,7 @@ services:
     image: ${DOCKERHUB_USERNAME:?}/msa-user-service:latest
     restart: unless-stopped
     environment:
+      TZ: Asia/Seoul                              # 시간대를 한국으로 (없으면 UTC 라 글 작성 시각이 9시간 늦게 보인다)
       DB_URL: jdbc:postgresql://db:5432/userdb
       DB_PASSWORD: ${DB_PASSWORD:?}
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET 이 .env 에 없습니다}
@@ -47,6 +48,7 @@ services:
     image: ${DOCKERHUB_USERNAME:?}/msa-post-service:latest
     restart: unless-stopped
     environment:
+      TZ: Asia/Seoul                              # 시간대를 한국으로 (없으면 UTC 라 글 작성 시각이 9시간 늦게 보인다)
       DB_URL: jdbc:postgresql://db:5432/postdb
       DB_PASSWORD: ${DB_PASSWORD:?}
     depends_on:
@@ -57,6 +59,7 @@ services:
     image: ${DOCKERHUB_USERNAME:?}/msa-api-gateway:latest
     restart: unless-stopped
     environment:
+      TZ: Asia/Seoul                              # 시간대를 한국으로 (없으면 UTC 라 글 작성 시각이 9시간 늦게 보인다)
       USER_SERVICE_URL: http://user-service:8081
       POST_SERVICE_URL: http://post-service:8082
       JWT_SECRET: ${JWT_SECRET:?}
