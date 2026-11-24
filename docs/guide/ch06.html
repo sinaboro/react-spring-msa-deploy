@@ -225,6 +225,9 @@ footer{padding:40px 0 50px;color:var(--sub);font-size:14px;text-align:center}
 <p><strong>[PS]</strong> <code>.pem</code> 내용을 클립보드에 복사하기 - 메모장으로 열어 복사해도 된다</p>
 <pre><code class="language-powershell">Get-Content $key -Raw | Set-Clipboard
 </code></pre>
+<blockquote class="note">
+<p><code>$key</code> 는 5-1 에서 만든 변수다. PowerShell 창을 새로 열었다면 5-1 의 첫 줄(<code>$key = ...</code>)을 다시 친다.</p>
+</blockquote>
 <p><code>-----BEGIN RSA PRIVATE KEY-----</code> 줄부터 <code>-----END RSA PRIVATE KEY-----</code> 줄까지 <strong>빠짐없이</strong> 붙여 넣는다. 한 줄이라도 빠지면 6-4 의 SSH 스텝이 <code>Load key ... invalid format</code> 으로 실패한다.</p>
 <blockquote class="note">
 <p><strong>DB_PASSWORD 는 5장의 값과 같아야 한다.</strong> PostgreSQL 은 <strong>처음 켤 때</strong> 받은 비밀번호로 DB 를 만들고, 그 뒤로는 <code>POSTGRES_PASSWORD</code> 가 바뀌어도 DB 비밀번호를 바꾸지 않는다(데이터는 볼륨에 남아 있으므로). 다른 값을 넣으면 서비스가 <code>password authentication failed</code> 로 DB 에 접속하지 못한다. (부록 A)</p>
@@ -425,7 +428,6 @@ jobs:
 <p>저장소 → <strong>Actions</strong> → 왼쪽 <strong>deploy</strong> → 오른쪽 <strong>Run workflow</strong> → 브랜치 <code>main</code> → <strong>Run workflow</strong>.</p>
 <figure><a href="../images/g03_run_dispatch.jpg" target="_blank"><img src="../images/g03_run_dispatch.jpg" alt="Run workflow - main 브랜치로 손으로 실행" loading="lazy"></a><figcaption>Run workflow - main 브랜치로 손으로 실행</figcaption></figure>
 <p>잠시 뒤 목록 맨 위에 새 실행이 생긴다. 눌러 들어가면 build 4개가 동시에 돌고, 다 끝나면 deploy 가 이어진다.</p>
-<figure><a href="../images/g01_run_progress.jpg" target="_blank"><img src="../images/g01_run_progress.jpg" alt="실행 중인 워크플로 - Matrix: build 4개가 끝나야 deploy 가 시작한다" loading="lazy"></a><figcaption>실행 중인 워크플로 - Matrix: build 4개가 끝나야 deploy 가 시작한다</figcaption></figure>
 <figure><a href="../images/g04_run_success.jpg" target="_blank"><img src="../images/g04_run_success.jpg" alt="성공 - build 4개와 deploy 모두 초록색. 전체 약 2분" loading="lazy"></a><figcaption>성공 - build 4개와 deploy 모두 초록색. 전체 약 2분</figcaption></figure>
 <p><strong>deploy</strong> 잡을 눌러 마지막 스텝 <strong>배포 확인</strong> 을 펼쳐 보자.</p>
 <figure><a href="../images/g05_deploy_log.jpg" target="_blank"><img src="../images/g05_deploy_log.jpg" alt="배포 확인 로그 - 502, 503 으로 기다리다 200 이 되면 성공" loading="lazy"></a><figcaption>배포 확인 로그 - 502, 503 으로 기다리다 200 이 되면 성공</figcaption></figure>
@@ -443,7 +445,7 @@ jobs:
 </ul>
 <p>이 숫자가 바뀌어 가는 모습이 1GB 서버에서 Spring 서비스 3개가 하나씩 깨어나는 과정이다.</p>
 <blockquote class="note">
-<p><strong>교안을 만들 때 겪은 실패</strong> - 처음 실행은 build 가 <code>insufficient scopes</code> 로 실패했다. Docker Hub 토큰을 Read-only 로 만들었기 때문이다(3장). 토큰을 Read &amp; Write 로 새로 만들어 <code>DOCKERHUB_TOKEN</code> 을 고친(Update) 뒤 다시 돌려 성공했다. 실패한 실행은 그 화면의 <strong>Re-run all jobs</strong> 로 다시 돌릴 수 있다.</p>
+<p><strong>교안을 만들 때 겪은 실패</strong> - Secrets 를 넣고 처음 돈 실행(#2)은 build 가 <code>insufficient scopes</code> 로 실패했다. Docker Hub 토큰을 Read-only 로 만들었기 때문이다(3장). 토큰을 Read &amp; Write 로 새로 만들어 <code>DOCKERHUB_TOKEN</code> 을 고친(Update) 뒤 다시 돌려 성공했다. 실패한 실행은 그 화면의 <strong>Re-run all jobs</strong> 로 다시 돌릴 수 있다.</p>
 </blockquote>
 <h2 id="확인-문제">확인 문제</h2>
 <ol>

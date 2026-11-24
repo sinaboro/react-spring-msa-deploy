@@ -117,11 +117,6 @@ docker compose logs --tail 50 post-service   # 마지막 50줄
 <td><code>docker ps</code> 로 겹치는 컨테이너 끄기. 아니면 compose 의 <code>"80:80"</code> 을 <code>"8000:80"</code> 으로 바꾸고 http://localhost:8000</td>
 </tr>
 <tr>
-<td>백엔드 빌드가 <code>gradlew: not found</code> 또는 <code>\r</code> 오류</td>
-<td>Windows 줄바꿈(CRLF)으로 받은 <code>gradlew</code></td>
-<td><code>git config core.autocrlf input</code> 후 다시 clone, 또는 VS Code 오른쪽 아래 CRLF → LF 로 저장</td>
-</tr>
-<tr>
 <td>http://localhost 에서 목록이 비고 콘솔에 502</td>
 <td>서비스가 아직 켜지는 중</td>
 <td>30초쯤 기다렸다 새로 고침. <code>docker compose logs api-gateway</code></td>

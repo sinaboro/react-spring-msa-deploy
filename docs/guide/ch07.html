@@ -116,7 +116,7 @@ git push
 </code></pre>
 <p>push 하자마자 Actions 탭에 새 실행이 생겼다. 제목은 커밋 메시지다.</p>
 <figure><a href="../images/g01_run_progress.jpg" target="_blank"><img src="../images/g01_run_progress.jpg" alt="push 하자마자 시작된 워크플로 - 제목은 커밋 메시지, 아래에 push 한 커밋 번호" loading="lazy"></a><figcaption>push 하자마자 시작된 워크플로 - 제목은 커밋 메시지, 아래에 push 한 커밋 번호</figcaption></figure>
-<p>2~3분 뒤 초록색으로 끝났고, 새 글을 써 보니 시각이 맞았다.</p>
+<p>이 실행(#2)은 사실 빨간색으로 실패했다. Docker Hub 토큰이 Read-only 였기 때문이다(3장, 7-3 의 표). 토큰을 Read &amp; Write 로 바꾼 뒤 다음 push(#3)가 3분 남짓 만에 초록색으로 끝났고, 시간대를 고친 설정도 그때 서버에 들어갔다. 새 글을 써 보니 시각이 맞았다.</p>
 <figure><a href="../images/e02_site_kst.jpg" target="_blank"><img src="../images/e02_site_kst.jpg" alt="배포 뒤 - 2·3번 글은 한국 시각(오후 07:22). 1번 글은 이미 저장된 값이라 그대로다" loading="lazy"></a><figcaption>배포 뒤 - 2·3번 글은 한국 시각(오후 07:22). 1번 글은 이미 저장된 값이라 그대로다</figcaption></figure>
 <p>1번 글은 여전히 오전 06:50 이다. 시간대를 고친 것은 "앞으로 저장할 시각" 이고, 이미 DB 에 저장된 값은 바꾸지 않기 때문이다. (실제 서비스라면 데이터를 고치는 SQL 을 따로 돌린다)</p>
 <p><code>docker compose up -d</code> 는 설정(environment)이 바뀐 서비스 3개만 새로 만들고 <strong>db 는 그대로</strong> 두었다. 그래서 회원과 글이 모두 남아 있다.</p>

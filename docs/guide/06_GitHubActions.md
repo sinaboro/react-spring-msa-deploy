@@ -69,6 +69,8 @@ Secrets 는 **한 번 넣으면 GitHub 화면에서도 다시 볼 수 없다**(�
 Get-Content $key -Raw | Set-Clipboard
 ```
 
+> `$key` 는 5-1 에서 만든 변수다. PowerShell 창을 새로 열었다면 5-1 의 첫 줄(`$key = ...`)을 다시 친다.
+
 `-----BEGIN RSA PRIVATE KEY-----` 줄부터 `-----END RSA PRIVATE KEY-----` 줄까지 **빠짐없이** 붙여 넣는다. 한 줄이라도 빠지면 6-4 의 SSH 스텝이 `Load key ... invalid format` 으로 실패한다.
 
 > **DB_PASSWORD 는 5장의 값과 같아야 한다.** PostgreSQL 은 **처음 켤 때** 받은 비밀번호로 DB 를 만들고, 그 뒤로는 `POSTGRES_PASSWORD` 가 바뀌어도 DB 비밀번호를 바꾸지 않는다(데이터는 볼륨에 남아 있으므로). 다른 값을 넣으면 서비스가 `password authentication failed` 로 DB 에 접속하지 못한다. (부록 A)
@@ -258,8 +260,6 @@ Variables 와 Secrets 를 다 넣었으면 워크플로를 돌려 보자. 아직
 
 잠시 뒤 목록 맨 위에 새 실행이 생긴다. 눌러 들어가면 build 4개가 동시에 돌고, 다 끝나면 deploy 가 이어진다.
 
-![실행 중인 워크플로 - Matrix: build 4개가 끝나야 deploy 가 시작한다](../images/g01_run_progress.jpg)
-
 ![성공 - build 4개와 deploy 모두 초록색. 전체 약 2분](../images/g04_run_success.jpg)
 
 **deploy** 잡을 눌러 마지막 스텝 **배포 확인** 을 펼쳐 보자.
@@ -281,7 +281,7 @@ Variables 와 Secrets 를 다 넣었으면 워크플로를 돌려 보자. 아직
 
 이 숫자가 바뀌어 가는 모습이 1GB 서버에서 Spring 서비스 3개가 하나씩 깨어나는 과정이다.
 
-> **교안을 만들 때 겪은 실패** - 처음 실행은 build 가 `insufficient scopes` 로 실패했다. Docker Hub 토큰을 Read-only 로 만들었기 때문이다(3장). 토큰을 Read & Write 로 새로 만들어 `DOCKERHUB_TOKEN` 을 고친(Update) 뒤 다시 돌려 성공했다. 실패한 실행은 그 화면의 **Re-run all jobs** 로 다시 돌릴 수 있다.
+> **교안을 만들 때 겪은 실패** - Secrets 를 넣고 처음 돈 실행(#2)은 build 가 `insufficient scopes` 로 실패했다. Docker Hub 토큰을 Read-only 로 만들었기 때문이다(3장). 토큰을 Read & Write 로 새로 만들어 `DOCKERHUB_TOKEN` 을 고친(Update) 뒤 다시 돌려 성공했다. 실패한 실행은 그 화면의 **Re-run all jobs** 로 다시 돌릴 수 있다.
 
 ## 확인 문제
 

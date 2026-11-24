@@ -149,16 +149,20 @@ footer{padding:40px 0 50px;color:var(--sub);font-size:14px;text-align:center}
 <h2 id="8-2-지우기---이-순서대로">8-2. 지우기 - 이 순서대로</h2>
 <p>EC2 는 <strong>켜 둔 시간만큼</strong> 요금이 붙는다. 실습이 끝나면 아래 순서대로 지운다. 앞의 것을 지워야 뒤의 것이 지워지는 경우가 있으니 순서를 지킨다.</p>
 <p><strong>① EC2 인스턴스 종료(삭제)</strong></p>
-<p>EC2 → <strong>인스턴스</strong> → <code>msa-deploy-server</code> 체크 → 위쪽 <strong>인스턴스 상태</strong> → <strong>인스턴스 종료(삭제)</strong> → 확인.</p>
+<p>EC2 → <strong>인스턴스</strong> → <code>msa-deploy-server</code> 체크 → 위쪽 <strong>인스턴스 상태</strong> → <strong>인스턴스 종료(삭제)</strong>.</p>
+<figure><a href="../images/i01_terminate_menu.jpg" target="_blank"><img src="../images/i01_terminate_menu.jpg" alt="인스턴스 상태 메뉴 - &quot;인스턴스 중지&quot; 가 아니라 맨 아래 &quot;인스턴스 종료(삭제)&quot;" loading="lazy"></a><figcaption>인스턴스 상태 메뉴 - &quot;인스턴스 중지&quot; 가 아니라 맨 아래 &quot;인스턴스 종료(삭제)&quot;</figcaption></figure>
+<figure><a href="../images/i02_terminate_confirm.jpg" target="_blank"><img src="../images/i02_terminate_confirm.jpg" alt="확인 창 - 루트 EBS 볼륨도 함께 지워진다는 안내. 종료(삭제) 를 누른다" loading="lazy"></a><figcaption>확인 창 - 루트 EBS 볼륨도 함께 지워진다는 안내. 종료(삭제) 를 누른다</figcaption></figure>
+<figure><a href="../images/i03_terminating.jpg" target="_blank"><img src="../images/i03_terminating.jpg" alt="인스턴스 상태가 &quot;종료 중&quot; 으로 바뀐다" loading="lazy"></a><figcaption>인스턴스 상태가 &quot;종료 중&quot; 으로 바뀐다</figcaption></figure>
 <ul>
 <li>상태가 "종료 중" → "종료됨" 으로 바뀐다. 종료됨 인스턴스는 한 시간쯤 목록에 남았다가 사라진다.</li>
 <li>디스크(EBS 20GiB)는 "종료 시 삭제" 가 기본값이라 함께 지워진다. <strong>글·회원 데이터도 모두 사라진다.</strong> 되돌릴 수 없다.</li>
 <li>"중지" 와 헷갈리지 않는다. 중지는 디스크 요금이 계속 나간다.</li>
 </ul>
 <p><strong>② 키 페어 삭제</strong></p>
-<p>EC2 → 왼쪽 <strong>네트워크 및 보안</strong> → <strong>키 페어</strong> → <code>msa-deploy-key</code> 체크 → <strong>작업</strong> → <strong>삭제</strong>. AWS 에 있는 자물쇠(공개 키)가 지워진다.</p>
+<p>EC2 → 왼쪽 <strong>네트워크 및 보안</strong> → <strong>키 페어</strong> → <code>msa-deploy-key</code> 체크 → <strong>작업</strong> → <strong>삭제</strong>. 확인 칸에 <code>삭제</code> 라고 직접 써야 삭제 단추가 눌린다. AWS 에 있는 자물쇠(공개 키)가 지워진다.</p>
+<figure><a href="../images/i04_keypair_delete.jpg" target="_blank"><img src="../images/i04_keypair_delete.jpg" alt="키 페어 삭제 - 칸에 &quot;삭제&quot; 를 쓰고 삭제" loading="lazy"></a><figcaption>키 페어 삭제 - 칸에 &quot;삭제&quot; 를 쓰고 삭제</figcaption></figure>
 <p><strong>③ 보안 그룹 삭제</strong></p>
-<p>EC2 → <strong>보안 그룹</strong> → <code>launch-wizard-1</code> 체크 → <strong>작업</strong> → <strong>보안 그룹 삭제</strong>. 인스턴스가 완전히 종료돼야 지워진다. "연결된 인스턴스가 있다" 고 나오면 몇 분 뒤에 다시 한다. (<code>default</code> 보안 그룹은 지우지 않는다. 지울 수도 없다)</p>
+<p>EC2 → <strong>보안 그룹</strong> → <code>launch-wizard-1</code> 체크 → <strong>작업</strong> → <strong>보안 그룹 삭제</strong>. 인스턴스가 보안 그룹을 놓아줘야 지워진다. "연결된 인스턴스가 있다" 고 나오면 몇 분 뒤에 다시 한다. (교안을 만들 때는 종료를 누르고 1분쯤 뒤에 바로 지워졌다) (<code>default</code> 보안 그룹은 지우지 않는다. 지울 수도 없다)</p>
 <p><strong>④ 탄력적 IP (만들었다면)</strong></p>
 <p>EC2 → <strong>탄력적 IP</strong> → 체크 → <strong>작업</strong> → <strong>탄력적 IP 주소 릴리스</strong>. 이 교안대로 했다면 만들지 않았으니 목록이 비어 있다.</p>
 <p><strong>⑤ GitHub 저장소 정리</strong></p>

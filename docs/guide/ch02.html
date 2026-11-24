@@ -406,13 +406,13 @@ curl.exe -s -o NUL -w &quot;%{http_code}`n&quot; http://localhost:8080/api/posts
 <pre><code class="language-powershell">docker stats --no-stream --format &quot;table {{.Name}}\t{{.MemUsage}}&quot;
 </code></pre>
 <pre><code class="language-text">NAME                        MEM USAGE / LIMIT
-msa-deploy-frontend-1       3MiB
-msa-deploy-api-gateway-1    170MiB
-msa-deploy-user-service-1   200MiB
-msa-deploy-post-service-1   200MiB
-msa-deploy-db-1             45MiB
+msa-deploy-frontend-1       6.777MiB / 15.59GiB
+msa-deploy-api-gateway-1    149.7MiB / 15.59GiB
+msa-deploy-post-service-1   223.4MiB / 15.59GiB
+msa-deploy-user-service-1   204.2MiB / 15.59GiB
+msa-deploy-db-1             79.35MiB / 15.59GiB
 </code></pre>
-<p>숫자는 PC 마다 조금 다르다. 합쳐서 600MB 안팎이면 1GB 서버에 올릴 수 있다. (5장에서 스왑 메모리를 더해 여유를 만든다)</p>
+<p>교안을 만들 때 강사 PC(메모리 16GB)에서 잰 값이다. 숫자는 PC 마다 조금 다르다. 다른 컨테이너(예: MSA 기초 과정의 <code>mas-db</code>)가 켜져 있으면 목록에 함께 나온다. 우리 것 5개를 합쳐서 600~700MB 쯤이면 1GB 서버에 올릴 수 있다. (5장에서 스왑 메모리를 더해 여유를 만든다)</p>
 <p><strong>[PS]</strong> 다 봤으면 끈다</p>
 <pre><code class="language-powershell">docker compose down
 </code></pre>
