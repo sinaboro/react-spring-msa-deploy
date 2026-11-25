@@ -36,9 +36,13 @@
 
 Secrets 는 **한 번 넣으면 GitHub 화면에서도 다시 볼 수 없다**(고치기만 된다). 그래서 5장의 `server.env` 처럼 값을 따로 메모해 두었다가 넣는다.
 
+> **먼저 확인** - 내 저장소(Fork)의 **Actions** 탭을 눌렀을 때 "Workflows aren't being run on this forked repository" 가 보이면 0-3 의 4번(초록 단추로 Actions 켜기)을 아직 하지 않은 것이다. 지금 켠다.
+
+> **"Confirm access" 창이 뜨면** - Settings 에서 비밀 값을 넣거나 고칠 때 GitHub 가 본인 확인을 한 번 더 요구할 때가 있다. GitHub 비밀번호, 휴대폰 앱(GitHub Mobile)의 승인, 또는 메일로 온 코드를 넣으면 몇 시간 동안은 다시 묻지 않는다. 확인한 뒤 입력 화면이 비어 있으면 값을 **다시** 넣고 저장한다. (교안을 만들 때 실제로 값이 저장되지 않아 다시 넣었다)
+
 ### Variables 넣기 (3개)
 
-저장소 → **Settings** → 왼쪽 **Secrets and variables** → **Actions** → **Variables** 탭 → **New repository variable**.
+내 저장소 → 위쪽 **Settings** (톱니바퀴) → 왼쪽 아래 **Secrets and variables** → **Actions** → **Variables** 탭 → 초록 **New repository variable**. 하나 넣을 때마다 **Add variable** 을 누르고, 3개를 차례로 넣는다.
 
 ![Variable 넣기 - Name 과 Value 를 적고 Add variable](../images/f01_variables_form.jpg)
 
@@ -52,7 +56,7 @@ Secrets 는 **한 번 넣으면 GitHub 화면에서도 다시 볼 수 없다**(�
 
 ### Secrets 넣기 (4개)
 
-같은 화면의 **Secrets** 탭 → **New repository secret**.
+같은 화면의 **Secrets** 탭 → 초록 **New repository secret**. Name 에 이름, Secret 에 값을 붙여 넣고 **Add secret**. 4개를 차례로 넣는다. 이름은 **대문자와 밑줄까지 똑같이** 쓴다. 워크플로가 이 이름으로 찾기 때문에 한 글자만 달라도 빈 값이 된다.
 
 ![New secret - 이름과 값을 넣는다. 넣은 뒤에는 값을 다시 볼 수 없다](../images/f04_secret_new.jpg)
 
@@ -63,11 +67,16 @@ Secrets 는 **한 번 넣으면 GitHub 화면에서도 다시 볼 수 없다**(�
 | `DB_PASSWORD` | `server.env` 의 DB_PASSWORD 값 |
 | `JWT_SECRET` | `server.env` 의 JWT_SECRET 값 |
 
-**[PS]** `.pem` 내용을 클립보드에 복사하기 - 메모장으로 열어 복사해도 된다
+**[PS]** 값을 하나씩 클립보드에 복사하기 - 한 줄 치고 → GitHub 에 붙여 넣고(Ctrl+V) → 다음 줄
 
 ```powershell
-Get-Content $key -Raw | Set-Clipboard
+cd C:\study\react-spring-msa-deploy                                                 # server.env 가 있는 저장소 폴더로
+Get-Content $key -Raw | Set-Clipboard                                              # EC2_SSH_KEY 용: .pem 파일 내용 전체
+(Select-String '^DB_PASSWORD=(.*)' server.env).Matches.Groups[1].Value | Set-Clipboard   # DB_PASSWORD 용: = 뒤의 값만
+(Select-String '^JWT_SECRET=(.*)' server.env).Matches.Groups[1].Value | Set-Clipboard    # JWT_SECRET 용: = 뒤의 값만
 ```
+
+> 메모장으로 `server.env` 를 열고 `=` **뒤의 값만** 골라 복사해도 된다. `DB_PASSWORD=` 까지 함께 붙여 넣으면 비밀번호가 달라진다. 앞뒤에 빈칸이 들어가지 않게 조심한다.
 
 > `$key` 는 5-1 에서 만든 변수다. PowerShell 창을 새로 열었다면 5-1 의 첫 줄(`$key = ...`)을 다시 친다.
 
@@ -77,7 +86,16 @@ Get-Content $key -Raw | Set-Clipboard
 
 ![Secrets 4개를 넣은 모습 - 값은 보이지 않는다](../images/f05_secrets_list.jpg)
 
-다 넣었으면 내 PC 의 `server.env` 와 메모장에 적어 둔 토큰은 지운다. 이제 비밀 값은 **GitHub Secrets 와 서버의 `.env`** 두 곳에만 있다.
+Secrets 목록에 `DB_PASSWORD`, `DOCKERHUB_TOKEN`, `EC2_SSH_KEY`, `JWT_SECRET` 4개가 보이면 다 넣은 것이다. 내 PC 에 남은 비밀 값을 지우면, 비밀 값은 **GitHub Secrets 와 서버의 `.env`** 두 곳에만 있다.
+
+**[PS]** 다 넣었으면 내 PC 의 비밀 값 정리
+
+```powershell
+Remove-Item server.env      # 서버용 .env 원본 지우기 (서버와 GitHub Secrets 에 이미 있다)
+Set-Clipboard -Value " "    # 클립보드에 남은 비밀 값 지우기
+```
+
+메모장에 붙여 두었던 Docker Hub 토큰도 저장하지 말고 닫는다. `.pem` 열쇠 파일은 아직 지우지 않는다. 7장에서 서버에 다시 접속할 수 있고, 8장에서 서버를 지울 때 함께 지운다.
 
 ## 6-3. 워크플로 읽기 ① - 언제, 그리고 build 잡
 

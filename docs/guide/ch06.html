@@ -167,8 +167,12 @@ footer{padding:40px 0 50px;color:var(--sub);font-size:14px;text-align:center}
 </tbody>
 </table></div>
 <p>Secrets 는 <strong>한 번 넣으면 GitHub 화면에서도 다시 볼 수 없다</strong>(고치기만 된다). 그래서 5장의 <code>server.env</code> 처럼 값을 따로 메모해 두었다가 넣는다.</p>
+<blockquote class="note">
+<p><strong>먼저 확인</strong> - 내 저장소(Fork)의 <strong>Actions</strong> 탭을 눌렀을 때 "Workflows aren't being run on this forked repository" 가 보이면 0-3 의 4번(초록 단추로 Actions 켜기)을 아직 하지 않은 것이다. 지금 켠다.</p>
+<p><strong>"Confirm access" 창이 뜨면</strong> - Settings 에서 비밀 값을 넣거나 고칠 때 GitHub 가 본인 확인을 한 번 더 요구할 때가 있다. GitHub 비밀번호, 휴대폰 앱(GitHub Mobile)의 승인, 또는 메일로 온 코드를 넣으면 몇 시간 동안은 다시 묻지 않는다. 확인한 뒤 입력 화면이 비어 있으면 값을 <strong>다시</strong> 넣고 저장한다. (교안을 만들 때 실제로 값이 저장되지 않아 다시 넣었다)</p>
+</blockquote>
 <h3 id="variables-넣기-3개">Variables 넣기 (3개)</h3>
-<p>저장소 → <strong>Settings</strong> → 왼쪽 <strong>Secrets and variables</strong> → <strong>Actions</strong> → <strong>Variables</strong> 탭 → <strong>New repository variable</strong>.</p>
+<p>내 저장소 → 위쪽 <strong>Settings</strong> (톱니바퀴) → 왼쪽 아래 <strong>Secrets and variables</strong> → <strong>Actions</strong> → <strong>Variables</strong> 탭 → 초록 <strong>New repository variable</strong>. 하나 넣을 때마다 <strong>Add variable</strong> 을 누르고, 3개를 차례로 넣는다.</p>
 <figure><a href="../images/f01_variables_form.jpg" target="_blank"><img src="../images/f01_variables_form.jpg" alt="Variable 넣기 - Name 과 Value 를 적고 Add variable" loading="lazy"></a><figcaption>Variable 넣기 - Name 과 Value 를 적고 Add variable</figcaption></figure>
 <div class="tbl"><table>
 <thead>
@@ -194,7 +198,7 @@ footer{padding:40px 0 50px;color:var(--sub);font-size:14px;text-align:center}
 </table></div>
 <figure><a href="../images/f02_variables_list.jpg" target="_blank"><img src="../images/f02_variables_list.jpg" alt="Variables 를 넣은 모습 - 값이 그대로 보인다 (EC2_USER 는 아래에 이어진다)" loading="lazy"></a><figcaption>Variables 를 넣은 모습 - 값이 그대로 보인다 (EC2_USER 는 아래에 이어진다)</figcaption></figure>
 <h3 id="secrets-넣기-4개">Secrets 넣기 (4개)</h3>
-<p>같은 화면의 <strong>Secrets</strong> 탭 → <strong>New repository secret</strong>.</p>
+<p>같은 화면의 <strong>Secrets</strong> 탭 → 초록 <strong>New repository secret</strong>. Name 에 이름, Secret 에 값을 붙여 넣고 <strong>Add secret</strong>. 4개를 차례로 넣는다. 이름은 <strong>대문자와 밑줄까지 똑같이</strong> 쓴다. 워크플로가 이 이름으로 찾기 때문에 한 글자만 달라도 빈 값이 된다.</p>
 <figure><a href="../images/f04_secret_new.jpg" target="_blank"><img src="../images/f04_secret_new.jpg" alt="New secret - 이름과 값을 넣는다. 넣은 뒤에는 값을 다시 볼 수 없다" loading="lazy"></a><figcaption>New secret - 이름과 값을 넣는다. 넣은 뒤에는 값을 다시 볼 수 없다</figcaption></figure>
 <div class="tbl"><table>
 <thead>
@@ -222,10 +226,14 @@ footer{padding:40px 0 50px;color:var(--sub);font-size:14px;text-align:center}
 </tr>
 </tbody>
 </table></div>
-<p><strong>[PS]</strong> <code>.pem</code> 내용을 클립보드에 복사하기 - 메모장으로 열어 복사해도 된다</p>
-<pre><code class="language-powershell">Get-Content $key -Raw | Set-Clipboard
+<p><strong>[PS]</strong> 값을 하나씩 클립보드에 복사하기 - 한 줄 치고 → GitHub 에 붙여 넣고(Ctrl+V) → 다음 줄</p>
+<pre><code class="language-powershell">cd C:\study\react-spring-msa-deploy                                                 # server.env 가 있는 저장소 폴더로
+Get-Content $key -Raw | Set-Clipboard                                              # EC2_SSH_KEY 용: .pem 파일 내용 전체
+(Select-String '^DB_PASSWORD=(.*)' server.env).Matches.Groups[1].Value | Set-Clipboard   # DB_PASSWORD 용: = 뒤의 값만
+(Select-String '^JWT_SECRET=(.*)' server.env).Matches.Groups[1].Value | Set-Clipboard    # JWT_SECRET 용: = 뒤의 값만
 </code></pre>
 <blockquote class="note">
+<p>메모장으로 <code>server.env</code> 를 열고 <code>=</code> <strong>뒤의 값만</strong> 골라 복사해도 된다. <code>DB_PASSWORD=</code> 까지 함께 붙여 넣으면 비밀번호가 달라진다. 앞뒤에 빈칸이 들어가지 않게 조심한다.</p>
 <p><code>$key</code> 는 5-1 에서 만든 변수다. PowerShell 창을 새로 열었다면 5-1 의 첫 줄(<code>$key = ...</code>)을 다시 친다.</p>
 </blockquote>
 <p><code>-----BEGIN RSA PRIVATE KEY-----</code> 줄부터 <code>-----END RSA PRIVATE KEY-----</code> 줄까지 <strong>빠짐없이</strong> 붙여 넣는다. 한 줄이라도 빠지면 6-4 의 SSH 스텝이 <code>Load key ... invalid format</code> 으로 실패한다.</p>
@@ -233,7 +241,12 @@ footer{padding:40px 0 50px;color:var(--sub);font-size:14px;text-align:center}
 <p><strong>DB_PASSWORD 는 5장의 값과 같아야 한다.</strong> PostgreSQL 은 <strong>처음 켤 때</strong> 받은 비밀번호로 DB 를 만들고, 그 뒤로는 <code>POSTGRES_PASSWORD</code> 가 바뀌어도 DB 비밀번호를 바꾸지 않는다(데이터는 볼륨에 남아 있으므로). 다른 값을 넣으면 서비스가 <code>password authentication failed</code> 로 DB 에 접속하지 못한다. (부록 A)</p>
 </blockquote>
 <figure><a href="../images/f05_secrets_list.jpg" target="_blank"><img src="../images/f05_secrets_list.jpg" alt="Secrets 4개를 넣은 모습 - 값은 보이지 않는다" loading="lazy"></a><figcaption>Secrets 4개를 넣은 모습 - 값은 보이지 않는다</figcaption></figure>
-<p>다 넣었으면 내 PC 의 <code>server.env</code> 와 메모장에 적어 둔 토큰은 지운다. 이제 비밀 값은 <strong>GitHub Secrets 와 서버의 <code>.env</code></strong> 두 곳에만 있다.</p>
+<p>Secrets 목록에 <code>DB_PASSWORD</code>, <code>DOCKERHUB_TOKEN</code>, <code>EC2_SSH_KEY</code>, <code>JWT_SECRET</code> 4개가 보이면 다 넣은 것이다. 내 PC 에 남은 비밀 값을 지우면, 비밀 값은 <strong>GitHub Secrets 와 서버의 <code>.env</code></strong> 두 곳에만 있다.</p>
+<p><strong>[PS]</strong> 다 넣었으면 내 PC 의 비밀 값 정리</p>
+<pre><code class="language-powershell">Remove-Item server.env      # 서버용 .env 원본 지우기 (서버와 GitHub Secrets 에 이미 있다)
+Set-Clipboard -Value &quot; &quot;    # 클립보드에 남은 비밀 값 지우기
+</code></pre>
+<p>메모장에 붙여 두었던 Docker Hub 토큰도 저장하지 말고 닫는다. <code>.pem</code> 열쇠 파일은 아직 지우지 않는다. 7장에서 서버에 다시 접속할 수 있고, 8장에서 서버를 지울 때 함께 지운다.</p>
 <h2 id="6-3-워크플로-읽기-①---언제-그리고-build-잡">6-3. 워크플로 읽기 ① - 언제, 그리고 build 잡</h2>
 <div class="file"><span>📄 .github/workflows/deploy.yml</span><a href="https://github.com/sinaboro/react-spring-msa-deploy/blob/main/.github/workflows/deploy.yml" target="_blank">GitHub 에서 보기</a></div>
 

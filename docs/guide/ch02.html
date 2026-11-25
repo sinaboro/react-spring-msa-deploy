@@ -386,8 +386,8 @@ volumes:
 <h2 id="2-5-내-pc-에서-운영처럼-실행하기">2-5. 내 PC 에서 운영처럼 실행하기</h2>
 <p>MSA 기초 과정의 DB 컨테이너나 IntelliJ 서비스가 켜져 있다면 먼저 끈다. (포트는 겹치지 않지만 메모리를 아끼자) Docker Desktop 이 실행 중인지도 확인한다.</p>
 <p><strong>[PS]</strong> 저장소 폴더에서 - 처음에는 라이브러리를 받느라 몇 분 걸린다</p>
-<pre><code class="language-powershell">docker compose up -d --build
-docker compose ps
+<pre><code class="language-powershell">docker compose up -d --build     # 이미지 4개를 빌드하고(--build) DB 까지 5개를 뒤에서(-d) 켠다
+docker compose ps                # 5개의 상태 보기 (db 가 healthy 면 준비 끝)
 </code></pre>
 <pre><code class="language-text">NAME                        SERVICE        STATUS                   PORTS
 msa-deploy-api-gateway-1    api-gateway    Up 30 seconds
@@ -403,7 +403,7 @@ msa-deploy-user-service-1   user-service   Up 35 seconds
 curl.exe -s -o NUL -w &quot;%{http_code}`n&quot; http://localhost:8080/api/posts # 000 (8080 은 바깥에 없다)
 </code></pre>
 <p><strong>[PS]</strong> 메모리 사용량 보기 - EC2(1GB)에 올라갈 수 있을지 미리 확인</p>
-<pre><code class="language-powershell">docker stats --no-stream --format &quot;table {{.Name}}\t{{.MemUsage}}&quot;
+<pre><code class="language-powershell">docker stats --no-stream --format &quot;table {{.Name}}\t{{.MemUsage}}&quot;   # 컨테이너별 메모리를 한 번만 찍는다
 </code></pre>
 <pre><code class="language-text">NAME                        MEM USAGE / LIMIT
 msa-deploy-frontend-1       6.777MiB / 15.59GiB
@@ -414,7 +414,7 @@ msa-deploy-db-1             79.35MiB / 15.59GiB
 </code></pre>
 <p>교안을 만들 때 강사 PC(메모리 16GB)에서 잰 값이다. 숫자는 PC 마다 조금 다르다. 다른 컨테이너(예: MSA 기초 과정의 <code>mas-db</code>)가 켜져 있으면 목록에 함께 나온다. 우리 것 5개를 합쳐서 600~700MB 쯤이면 1GB 서버에 올릴 수 있다. (5장에서 스왑 메모리를 더해 여유를 만든다)</p>
 <p><strong>[PS]</strong> 다 봤으면 끈다</p>
-<pre><code class="language-powershell">docker compose down
+<pre><code class="language-powershell">docker compose down      # 5개를 끄고 지운다 (DB 데이터 볼륨은 남는다)
 </code></pre>
 <blockquote class="note">
 <p><code>docker compose down</code> 은 컨테이너만 지우고 DB 데이터(볼륨 <code>db_data</code>)는 남긴다. 처음부터 다시 하고 싶으면 <code>docker compose down -v</code> 로 볼륨까지 지운다.</p>

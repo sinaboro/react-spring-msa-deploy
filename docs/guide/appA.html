@@ -92,7 +92,7 @@ footer{padding:40px 0 50px;color:var(--sub);font-size:14px;text-align:center}
 <h1 id="부록-a-오류-해결">부록 A. 오류 해결</h1>
 <p>증상을 먼저 찾고, <strong>어디서(내 PC / Actions 로그 / EC2)</strong> 확인하는지 본 뒤 고친다. 서버 쪽 문제는 거의 언제나 이 두 명령에서 실마리가 나온다.</p>
 <p><strong>[EC2]</strong> 상태와 로그</p>
-<pre><code class="language-bash">cd ~/app
+<pre><code class="language-bash">cd ~/app                                # compose 파일이 있는 폴더
 docker compose ps                       # 꺼진(Exited) 서비스가 있나, db 가 healthy 인가
 docker compose logs --tail 50 post-service   # 마지막 50줄
 </code></pre>
@@ -198,6 +198,21 @@ docker compose logs --tail 50 post-service   # 마지막 50줄
 </thead>
 <tbody>
 <tr>
+<td>Actions 탭에 "Workflows aren't being run on this forked repository", Run workflow 단추가 없다</td>
+<td>Fork 한 저장소는 Actions 가 꺼져 있다</td>
+<td>초록 <strong>I understand my workflows, go ahead and enable them</strong> 단추 (0-3)</td>
+</tr>
+<tr>
+<td>push 해도 Actions 에 아무것도 생기지 않는다</td>
+<td>위와 같음, 또는 main 이 아닌 브랜치에 push</td>
+<td>Actions 켜기, <code>git branch</code> 로 main 인지 확인</td>
+</tr>
+<tr>
+<td>Variables·Secrets 를 넣었는데 목록에 없다</td>
+<td>"Confirm access"(본인 확인) 뒤에 입력 내용이 사라졌다</td>
+<td>본인 확인 후 값을 다시 넣고 Add 단추 (6-2)</td>
+</tr>
+<tr>
 <td>모든 잡이 회색(건너뜀)</td>
 <td>Variables <code>DOCKERHUB_USERNAME</code> 이 없다</td>
 <td>6-2 대로 Variables 넣기</td>
@@ -241,7 +256,7 @@ docker compose logs --tail 50 post-service   # 마지막 50줄
 <tbody>
 <tr>
 <td><code>password authentication failed for user "postgres"</code></td>
-<td>DB 를 처음 만든 비밀번호와 지금 <code>.env</code> 의 <code>DB_PASSWORD</code> 가 다르다</td>
+<td>DB 를 처음 만든 비밀번호와 지금 <code>.env</code> 의 <code>DB_PASSWORD</code> 가 다르다. 5장에서 메모장·<code>Set-Content</code> 로 만든 <code>.env</code> 라면 줄 끝의 보이지 않는 <code>\r</code> 때문에 달라졌을 수도 있다</td>
 <td><code>DB_PASSWORD</code> Secret 을 처음 값으로 되돌린다. 데이터를 버려도 되면 <strong>[EC2]</strong> <code>docker compose down -v</code> 후 Run workflow (볼륨을 지우고 새 비밀번호로 다시 만든다)</td>
 </tr>
 <tr>

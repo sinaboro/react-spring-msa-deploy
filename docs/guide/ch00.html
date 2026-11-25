@@ -243,11 +243,102 @@ footer{padding:40px 0 50px;color:var(--sub);font-size:14px;text-align:center}
 <blockquote class="note">
 <p><strong>요금 이야기 먼저.</strong> 이 교안의 EC2(t3.micro, 서울)는 켜 둔 시간만큼 요금이 붙는다(약 시간당 0.013 달러 + 공인 IP 0.005 달러, 한 달 내내 켜 두면 약 13 달러, 2만 원 안팎). AWS 신규 계정은 프리 티어·무료 크레딧으로 처리되는 경우가 많지만, <strong>실습이 끝나면 8장대로 인스턴스를 지우는 것</strong>이 가장 확실한 절약이다.</p>
 </blockquote>
-<p><strong>[PS]</strong> 저장소 받기 - 자기 GitHub 로 <strong>Fork</strong> 한 뒤 받는다 (Actions 와 Secrets 는 자기 저장소에서만 설정할 수 있다)</p>
-<pre><code class="language-powershell">cd C:\study
-git clone https://github.com/&lt;내GitHub아이디&gt;/react-spring-msa-deploy.git
-cd react-spring-msa-deploy
+<p><strong>[PS]</strong> 설치 확인 - 네 줄 모두 버전이 나오면 된다</p>
+<pre><code class="language-powershell">docker --version          # Docker Desktop 이 설치돼 있는지 (예: Docker version 28.x)
+docker compose version    # compose 명령이 있는지 (Docker Desktop 에 들어 있다)
+git --version             # Git (예: git version 2.5x)
+ssh -V                    # Windows 기본 OpenSSH (예: OpenSSH_for_Windows_9.x)
 </code></pre>
+<blockquote class="note">
+<p><code>docker</code> 명령이 "인식되지 않습니다" 라고 나오면 Docker Desktop 을 설치하고 <strong>실행</strong>한 뒤 PowerShell 창을 새로 연다. 작업 표시줄의 고래 아이콘이 움직이지 않고 멈춰 있어야 준비된 것이다.</p>
+</blockquote>
+<h2 id="0-2-계정-만들기---수업-전에-해-오기">0-2. 계정 만들기 - 수업 전에 해 오기</h2>
+<p><strong>GitHub, Docker Hub</strong> 는 이메일만 있으면 몇 분 안에 만든다. <strong>AWS</strong> 는 카드 확인과 전화 인증이 있어 10~20분쯤 걸리고, 가끔 인증 문자가 늦게 오기도 하니 <strong>수업 전에 미리</strong> 만들어 온다.</p>
+<h3 id="docker-hub">Docker Hub</h3>
+<ol>
+<li>https://hub.docker.com → <strong>Sign up</strong> → 이메일, 사용자 이름(Username), 비밀번호를 넣는다.</li>
+<li>이메일로 온 확인 메일의 단추를 누른다.</li>
+<li><strong>사용자 이름(Username)을 적어 둔다.</strong> 이미지 이름의 앞부분(<code>&lt;사용자이름&gt;/msa-frontend</code>)이 되고, 6장에서 GitHub 에 넣는다. 영어 소문자·숫자만 쓸 수 있다.</li>
+</ol>
+<h3 id="aws">AWS</h3>
+<p>https://aws.amazon.com 오른쪽 위 <strong>AWS 계정 생성</strong> 을 누르면 아래 화면이 나온다. 오른쪽 위에서 언어를 <strong>한국어</strong>로 바꿀 수 있다.</p>
+<figure><a href="../images/a01_aws_signup.jpg" target="_blank"><img src="../images/a01_aws_signup.jpg" alt="AWS 가입 첫 화면 - 이메일과 계정 이름을 넣고 &quot;이메일 주소 확인&quot;" loading="lazy"></a><figcaption>AWS 가입 첫 화면 - 이메일과 계정 이름을 넣고 &quot;이메일 주소 확인&quot;</figcaption></figure>
+<p>가입은 아래 순서로 이어진다. 화면 모양은 AWS 가 자주 바꾸지만 넣는 내용은 같다.</p>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>순서</th>
+<th>화면에서 할 일</th>
+<th>주의</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>①</td>
+<td><strong>AWS 계정 이메일 주소</strong>, <strong>AWS 계정 이름</strong>(예: <code>msa-study</code>) → 이메일 주소 확인</td>
+<td>이 이메일이 <strong>루트 사용자</strong>(계정의 주인) 아이디가 된다</td>
+</tr>
+<tr>
+<td>②</td>
+<td>메일로 온 <strong>확인 코드 6자리</strong> 입력</td>
+<td>메일이 안 오면 스팸함을 본다</td>
+</tr>
+<tr>
+<td>③</td>
+<td><strong>루트 사용자 암호</strong> 정하기</td>
+<td>잊으면 찾기 번거롭다. 따로 적어 둔다</td>
+</tr>
+<tr>
+<td>④</td>
+<td>연락처 정보 - 용도 <strong>개인</strong>, 이름·전화번호·주소 (영문)</td>
+<td>주소는 영문으로. 한글 주소를 영문으로 바꿔 주는 사이트를 써도 된다</td>
+</tr>
+<tr>
+<td>⑤</td>
+<td><strong>결제 정보</strong> - 해외 결제가 되는 카드</td>
+<td>카드 확인용으로 1달러쯤 임시 결제됐다가 취소된다</td>
+</tr>
+<tr>
+<td>⑥</td>
+<td><strong>자격 증명 확인</strong> - 휴대폰 번호 → 문자(SMS) 또는 음성 전화로 온 코드 입력</td>
+<td>국가는 대한민국(+82), 번호 앞의 0 은 빼도 된다</td>
+</tr>
+<tr>
+<td>⑦</td>
+<td><strong>플랜 선택</strong> - "무료 플랜(Free)" 과 "유료 플랜" 중 고르는 화면이 나오면 <strong>무료</strong></td>
+<td>무료 플랜은 크레딧 안에서만 쓰고, 넘으면 멈춘다</td>
+</tr>
+<tr>
+<td>⑧</td>
+<td>지원 플랜(Support) 을 묻으면 <strong>기본 지원 - 무료(Basic)</strong></td>
+<td>유료 지원 플랜을 고르지 않는다</td>
+</tr>
+</tbody>
+</table></div>
+<p>가입이 끝나면 https://console.aws.amazon.com 에 <strong>루트 사용자</strong>로 로그인한다. 계정이 완전히 준비되기까지 몇 분 걸릴 수 있다. 처음 몇 분 동안 EC2 화면에서 "계정 확인 중" 이 보이면 잠시 기다린다.</p>
+<blockquote class="note">
+<p><strong>루트 사용자는 은행 계좌의 주인 도장과 같다.</strong> 실무에서는 루트로는 거의 로그인하지 않고 권한을 줄인 IAM 사용자를 따로 만든다. 이 교안은 실습을 짧게 하려고 루트로 진행하지만, 루트 암호와 카드가 걸린 계정이니 <strong>2단계 인증(MFA)</strong> 을 켜 두기를 권한다. (콘솔 오른쪽 위 계정 이름 → 보안 자격 증명 → MFA 할당)</p>
+</blockquote>
+<h2 id="0-3-저장소-fork-하고-받기">0-3. 저장소 Fork 하고 받기</h2>
+<p>GitHub Actions 와 Secrets 는 <strong>내 저장소</strong>에서만 설정할 수 있다. 그래서 강사 저장소를 내 계정으로 복사(<strong>Fork</strong>)해서 쓴다.</p>
+<ol>
+<li>https://github.com/sinaboro/react-spring-msa-deploy 를 연다.</li>
+<li>오른쪽 위 <strong>Fork</strong> → Owner 가 내 아이디인지 확인 → <strong>Create fork</strong>.</li>
+<li>내 저장소 <code>https://github.com/&lt;내GitHub아이디&gt;/react-spring-msa-deploy</code> 가 생긴다.</li>
+<li><strong>Actions 켜기</strong> - 내 저장소의 <strong>Actions</strong> 탭을 누른다. Fork 한 저장소는 안전을 위해 워크플로가 꺼져 있어서 "Workflows aren't being run on this forked repository" 라는 안내가 보인다. 초록색 <strong>I understand my workflows, go ahead and enable them</strong> 단추를 누른다.</li>
+</ol>
+<blockquote class="note">
+<p>4번을 빠뜨리면 6장에서 <strong>Run workflow</strong> 단추가 보이지 않고, push 해도 아무 일도 일어나지 않는다. 지금 바로 켜 두자. (켜도 6장에서 Variables 를 넣기 전까지는 워크플로가 일을 건너뛰므로 걱정하지 않아도 된다)</p>
+</blockquote>
+<p><strong>[PS]</strong> 내 저장소를 내 PC 로 받기 - <code>C:\study</code> 폴더가 없으면 먼저 만든다</p>
+<pre><code class="language-powershell">mkdir C:\study -Force        # 실습 폴더 만들기 (이미 있으면 그냥 넘어간다)
+cd C:\study
+git clone https://github.com/&lt;내GitHub아이디&gt;/react-spring-msa-deploy.git   # 강사 주소가 아니라 &quot;내&quot; 주소
+cd react-spring-msa-deploy   # 이후 [PS] 명령은 모두 이 폴더에서 친다
+</code></pre>
+<blockquote class="note">
+<p><strong>이 교안의 [PS] 명령은 모두 이 저장소 폴더(<code>C:\study\react-spring-msa-deploy</code>)에서 친다.</strong> PowerShell 창을 새로 열었다면 <code>cd C:\study\react-spring-msa-deploy</code> 부터 한다. 프롬프트가 <code>PS C:\study\react-spring-msa-deploy&gt;</code> 인지 늘 확인한다.</p>
+</blockquote>
 <p><strong>폴더 구성</strong></p>
 <pre><code class="language-text">react-spring-msa-deploy/
 ├─ backend/                     MSA 기초 과정 서비스 3개
@@ -264,11 +355,14 @@ cd react-spring-msa-deploy
 <blockquote class="note">
 <p><strong>교안 속 값은 모두 예시다.</strong> Docker Hub 사용자 이름 <code>rlaeocjf</code>, EC2 주소 <code>3.35.37.211</code> 같은 값은 강사가 교안을 만들 때 쓴 것이다. 따라 할 때는 <strong>내 사용자 이름, 내 EC2 주소</strong>로 바꿔 넣는다. 화면 캡처에서 AWS 계정 정보는 가렸다.</p>
 </blockquote>
-<h2 id="0-2-이-교안의-표시">0-2. 이 교안의 표시</h2>
+<h2 id="0-4-이-교안의-표시">0-4. 이 교안의 표시</h2>
 <ul>
 <li><strong>[PS]</strong> 표시 아래 명령은 <strong>내 PC 의 PowerShell</strong> 에서 친다.</li>
 <li><strong>[EC2]</strong> 표시 아래 명령은 <code>ssh</code> 로 접속한 <strong>EC2 서버의 터미널</strong>(<code>ubuntu@ip-...:~$</code>)에서 친다. 둘을 헷갈리면 "명령을 찾을 수 없다" 는 오류가 난다.</li>
-<li><code>&lt;내GitHub아이디&gt;</code> 처럼 <code>&lt; &gt;</code> 로 감싼 곳은 내 값으로 바꾼다. <code>&lt; &gt;</code> 기호는 지운다.</li>
+<li><code>&lt;내GitHub아이디&gt;</code> 처럼 <code>&lt; &gt;</code> 로 감싼 곳은 내 값으로 바꾼다. <code>&lt; &gt;</code> 기호는 지운다. (예: <code>ssh -i $key ubuntu@&lt;EC2주소&gt;</code> → <code>ssh -i $key ubuntu@3.35.37.211</code>)</li>
+<li>명령 뒤의 <code># ...</code> 는 <strong>설명(주석)</strong> 이다. PowerShell 과 EC2(bash) 모두 <code>#</code> 뒤를 무시하므로 함께 복사해 붙여 넣어도 된다.</li>
+<li>명령 아래의 회색 상자(<code>text</code>)는 <strong>화면에 나오는 결과의 예</strong>다. 직접 치는 것이 아니다. 시간·번호·주소는 내 화면과 다를 수 있다.</li>
+<li>한 번에 한 상자씩 붙여 넣고, 결과가 교안과 비슷한지 확인한 뒤 다음으로 넘어간다. 오류가 나면 그 자리에서 <strong>부록 A</strong> 를 찾는다.</li>
 </ul>
 <h2 id="확인-문제">확인 문제</h2>
 <ol>

@@ -106,33 +106,97 @@ footer{padding:40px 0 50px;color:var(--sub);font-size:14px;text-align:center}
 <li><strong>태그</strong>: 같은 저장소 안의 버전 이름. <code>latest</code> 는 "가장 최근" 이라는 약속일 뿐 특별한 기능은 없다. 6장의 GitHub Actions 는 <code>latest</code> 와 함께 <strong>커밋 번호</strong> 태그도 붙여서 "어느 코드로 만든 이미지인지" 를 남긴다.</li>
 </ul>
 <p><code>postgres:18</code> 처럼 사용자 이름이 없는 이미지는 Docker 가 관리하는 <strong>공식 이미지</strong>다.</p>
-<h2 id="3-2-access-token-만들기">3-2. Access Token 만들기</h2>
-<p>Docker Hub 에 로그인할 때 비밀번호 대신 <strong>Access Token</strong>(접근 토큰)을 쓴다. 토큰은 권한을 좁게 줄 수 있고, 잃어버리면 그 토큰만 지우면 된다. 6장에서 GitHub Actions 도 이 토큰으로 로그인한다.</p>
-<ol>
-<li>https://hub.docker.com 에 로그인한다.</li>
-<li>오른쪽 위 프로필 → <strong>Account settings</strong> → 왼쪽 <strong>Personal access tokens</strong> → <strong>Generate new token</strong>.</li>
-<li>설명(Description)에 <code>msa-deploy</code> 처럼 적는다. 만료 기간은 실습 기간에 맞게 고른다.</li>
-<li><strong>Access permissions 는 <code>Read &amp; Write</code></strong> 를 고른다. ← 가장 중요</li>
-<li><strong>Generate</strong> → 나온 토큰(<code>dckr_pat_...</code>)을 복사한다. <strong>이 화면을 닫으면 다시 볼 수 없다.</strong> 메모장에 잠깐 붙여 두고, 6장에서 GitHub Secrets 에 넣은 뒤 지운다.</li>
-</ol>
+<h2 id="3-2-access-token-만들기-화면-따라-하기">3-2. Access Token 만들기 (화면 따라 하기)</h2>
+<p>Docker Hub 에 로그인할 때 비밀번호 대신 <strong>Access Token</strong>(접근 토큰)을 쓴다. 토큰은 권한을 좁게 줄 수 있고, 잃어버리면 그 토큰만 지우면 된다. 이 장에서는 내 PC 의 <code>docker login</code> 에, 6장에서는 GitHub Actions 의 로그인에 이 토큰을 쓴다.</p>
+<p><strong>① 계정 설정으로 가기</strong> - https://hub.docker.com 에 로그인 → 오른쪽 위 동그란 프로필 → <strong>Account settings</strong>. 새 탭(app.docker.com)으로 열린다.</p>
+<figure><a href="../images/k01_profile_menu.jpg" target="_blank"><img src="../images/k01_profile_menu.jpg" alt="프로필 메뉴 - Account settings" loading="lazy"></a><figcaption>프로필 메뉴 - Account settings</figcaption></figure>
+<p><strong>② 토큰 목록</strong> - 왼쪽 메뉴 <strong>Personal access tokens</strong> → 오른쪽 위 파란 <strong>Generate new token</strong>.</p>
+<figure><a href="../images/k02_token_list.jpg" target="_blank"><img src="../images/k02_token_list.jpg" alt="Personal access tokens - 지금까지 만든 토큰과 권한(Scope)이 보인다" loading="lazy"></a><figcaption>Personal access tokens - 지금까지 만든 토큰과 권한(Scope)이 보인다</figcaption></figure>
+<p>목록의 <strong>Scope</strong> 칸을 보자. 강사 화면의 <code>deploy2</code> 토큰은 <code>Repo Public Read-only</code> 다. 바로 이 토큰 때문에 push 가 실패했다(아래 주의 상자). <code>msa-deploy-actions</code> 는 <code>Repo Read &amp; Write</code> 로 다시 만든 토큰이다.</p>
+<p><strong>③ 새 토큰 입력 화면</strong> - 처음 열면 권한이 <strong><code>Repo Public Read-only</code></strong> 로 골라져 있다. 그대로 Generate 를 누르면 push 할 수 없는 토큰이 만들어진다.</p>
+<figure><a href="../images/k03_token_default.jpg" target="_blank"><img src="../images/k03_token_default.jpg" alt="새 토큰 화면 - 권한 기본값이 Public Read-only 다. 이대로 만들면 안 된다" loading="lazy"></a><figcaption>새 토큰 화면 - 권한 기본값이 Public Read-only 다. 이대로 만들면 안 된다</figcaption></figure>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>칸</th>
+<th>넣을 값</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Access token description</td>
+<td><code>msa-deploy</code> (무엇에 쓰는 토큰인지 알아볼 이름)</td>
+</tr>
+<tr>
+<td>Expiration date</td>
+<td><code>30 days</code> (실습 기간. None 은 만료되지 않아 잊어버리면 위험하다)</td>
+</tr>
+<tr>
+<td>Repository permissions</td>
+<td><strong><code>Repo Read &amp; Write</code></strong> ← 가장 중요</td>
+</tr>
+<tr>
+<td>Allow Cloud Sandboxes access</td>
+<td>체크하지 않는다</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>④ 권한 고르기</strong> - Repository permissions 칸을 눌러 <strong>Repo Read &amp; Write</strong> 를 고른다.</p>
+<figure><a href="../images/k04_token_permissions.jpg" target="_blank"><img src="../images/k04_token_permissions.jpg" alt="권한 목록 - Read-only 둘이 아니라 Read &amp; Write 를 고른다" loading="lazy"></a><figcaption>권한 목록 - Read-only 둘이 아니라 Read &amp; Write 를 고른다</figcaption></figure>
+<div class="tbl"><table>
+<thead>
+<tr>
+<th>권한</th>
+<th>할 수 있는 일</th>
+<th>이 교안에서</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Repo Public Read-only</td>
+<td>공개 이미지 받기(pull)만</td>
+<td>✗ push 실패</td>
+</tr>
+<tr>
+<td>Repo Read-only</td>
+<td>내 비공개 이미지까지 받기만</td>
+<td>✗ push 실패</td>
+</tr>
+<tr>
+<td><strong>Repo Read &amp; Write</strong></td>
+<td>받기 + <strong>올리기(push)</strong></td>
+<td>✔ 이것</td>
+</tr>
+<tr>
+<td>Repo Read, Write, Delete</td>
+<td>위 + 저장소 지우기</td>
+<td>필요 이상으로 넓다</td>
+</tr>
+</tbody>
+</table></div>
+<figure><a href="../images/k05_token_readwrite.jpg" target="_blank"><img src="../images/k05_token_readwrite.jpg" alt="Read &amp; Write 를 고른 모습 - 아래 설명이 &quot;push images&quot; 로 바뀐다" loading="lazy"></a><figcaption>Read &amp; Write 를 고른 모습 - 아래 설명이 &quot;push images&quot; 로 바뀐다</figcaption></figure>
+<p><strong>⑤ Generate</strong> 를 누르면 <code>dckr_pat_</code> 로 시작하는 긴 토큰이 <strong>한 번만</strong> 보인다. <strong>Copy</strong> 단추로 복사해서 메모장에 잠깐 붙여 둔다. 이 화면을 닫으면 다시 볼 수 없다. 잃어버렸으면 목록에서 그 토큰을 지우고(⋮ → Delete) 새로 만들면 된다.</p>
 <blockquote class="note">
-<p><strong>권한을 <code>Read-only</code> 로 만들면 push 가 막힌다.</strong> 교안을 만들 때 실제로 겪은 실수다. GitHub Actions 로그에 이런 줄이 나온다.</p>
+<p><strong>권한을 Read-only 로 만들면 push 가 막힌다.</strong> 교안을 만들 때 실제로 겪은 실수다. GitHub Actions 로그에 이런 줄이 나온다.</p>
 <p><code>unexpected status from HEAD request to ...: 401 Unauthorized ... insufficient scopes</code></p>
-<p>로그인(login)은 성공하므로 헷갈리기 쉽다. 토큰을 <code>Read &amp; Write</code> 로 새로 만들어 바꾸면 된다.</p>
+<p>로그인(login)은 성공하므로 헷갈리기 쉽다. "로그인은 되는데 push 만 안 된다" 면 토큰 권한부터 의심한다. Read &amp; Write 토큰을 <strong>새로 만들어</strong> 바꾸는 것이 가장 확실하다. (잘못 만든 토큰은 목록의 ⋮ → Delete 로 지운다)</p>
 </blockquote>
-<p>토큰은 비밀번호와 같다. 화면 캡처, 카톡, GitHub 코드 어디에도 남기지 않는다.</p>
+<p>토큰은 비밀번호와 같다. 화면 캡처, 카톡, GitHub 코드 어디에도 남기지 않는다. 메모장의 토큰은 6장에서 GitHub Secrets 에 넣은 뒤 지운다.</p>
 <h2 id="3-3-로그인하고-올리기">3-3. 로그인하고 올리기</h2>
-<p><strong>[PS]</strong> Docker Hub 로그인 - 비밀번호를 물으면 <strong>토큰</strong>을 붙여 넣는다 (화면에 보이지 않는 것이 정상)</p>
-<pre><code class="language-powershell">docker login -u &lt;내DockerHub아이디&gt;
+<p><strong>[PS]</strong> Docker Hub 로그인 - <code>Password:</code> 가 나오면 <strong>비밀번호가 아니라 토큰</strong>을 붙여 넣고 Enter</p>
+<pre><code class="language-powershell">docker login -u &lt;내DockerHub아이디&gt;    # 예: docker login -u rlaeocjf
 </code></pre>
-<pre><code class="language-text">Password:
+<pre><code class="language-text">Password:                 ← 토큰을 붙여 넣는다 (Ctrl+V 또는 마우스 오른쪽 클릭). 글자가 보이지 않는 것이 정상
 Login Succeeded
 </code></pre>
-<p>2장에서 만든 이미지 이름은 <code>local/msa-...</code> 였다. 내 사용자 이름으로 다시 굽자. 저장소 폴더에 <code>.env</code> 파일을 만들면 compose 가 자동으로 읽는다.</p>
+<blockquote class="note">
+<p>PowerShell 에서는 <strong>마우스 오른쪽 클릭</strong>이 붙여넣기다. 붙여 넣었는데 아무것도 안 보여도 들어간 것이니 Enter 를 누른다. <code>unauthorized: incorrect username or password</code> 가 나오면 아이디 철자와 토큰을 다시 확인한다.</p>
+</blockquote>
+<p>2장에서 만든 이미지 이름은 <code>local/msa-...</code> 였다. Docker Hub 에 올리려면 이름 앞부분이 <strong>내 사용자 이름</strong>이어야 한다. 저장소 폴더에 <code>.env</code> 파일을 만들면 compose 가 자동으로 읽어서 이름을 바꿔 준다.</p>
 <p><strong>[PS]</strong> <code>.env</code> 만들기 - <code>.env.example</code> 을 복사해서 사용자 이름만 바꾼다</p>
-<pre><code class="language-powershell">copy .env.example .env
-notepad .env          # DOCKERHUB_USERNAME=&lt;내DockerHub아이디&gt; 로 고치고 저장
-docker compose config --images
+<pre><code class="language-powershell">copy .env.example .env            # 본보기 파일을 .env 로 복사
+notepad .env                      # 메모장이 열리면 DOCKERHUB_USERNAME=&lt;내DockerHub아이디&gt; 로 고치고 저장(Ctrl+S) 후 닫기
+docker compose config --images    # compose 가 만들 이미지 이름 확인
 </code></pre>
 <pre><code class="language-text">rlaeocjf/msa-user-service:latest
 rlaeocjf/msa-post-service:latest
@@ -140,10 +204,10 @@ rlaeocjf/msa-api-gateway:latest
 rlaeocjf/msa-frontend:latest
 postgres:18
 </code></pre>
-<p>(줄의 순서는 위와 다를 수 있다) 이름이 내 아이디로 바뀌었으면 빌드하고 올린다. 2장에서 한 번 빌드했으므로 캐시 덕분에 빠르다.</p>
-<p><strong>[PS]</strong> 빌드 후 4개만 push (postgres:18 은 남의 공식 이미지라 올리지 않는다)</p>
-<pre><code class="language-powershell">docker compose build
-docker compose push user-service post-service api-gateway frontend
+<p>줄의 순서는 위와 다를 수 있다. 앞부분이 <code>local/</code> 이 아니라 <strong>내 아이디</strong>로 바뀌었으면 성공이다. (<code>.env</code> 는 <code>.gitignore</code> 에 있어 GitHub 에 올라가지 않는다)</p>
+<p><strong>[PS]</strong> 새 이름으로 빌드하고 4개만 push - 2장에서 한 번 빌드했으므로 캐시 덕분에 빠르다</p>
+<pre><code class="language-powershell">docker compose build                                                  # 이름만 바뀌고 내용은 캐시에서 (1분 안쪽)
+docker compose push user-service post-service api-gateway frontend    # 우리 이미지 4개만 Docker Hub 로 (처음엔 몇 분)
 </code></pre>
 <pre><code class="language-text">[+] Pushing 4/4
  ✔ Pushing rlaeocjf/msa-user-service:latest
@@ -153,9 +217,10 @@ docker compose push user-service post-service api-gateway frontend
 </code></pre>
 <blockquote class="note">
 <p>서비스 이름을 적어 <strong>우리 것 4개만</strong> 고른다. <code>db</code> 의 <code>postgres:18</code> 은 남의 이미지라 우리 계정으로 올릴 수 없고, 올릴 까닭도 없다. 서버도 Docker Hub 에서 공식 이미지를 바로 받는다.</p>
+<p><code>denied: requested access to the resource is denied</code> 가 나오면 이미지 이름이 내 아이디가 아니거나(<code>.env</code> 를 저장하지 않았다), 로그인한 아이디와 <code>.env</code> 의 아이디가 다르다. <code>docker compose config --images</code> 로 이름부터 다시 본다.</p>
 </blockquote>
-<p>https://hub.docker.com 의 내 프로필(Repositories)에 저장소 4개가 생겼다. 처음 push 한 저장소는 <strong>공개(Public)</strong> 로 만들어진다. 공개 이미지는 누구나 받을(pull) 수 있지만, 올리기(push)는 나만 할 수 있다.</p>
-<figure><a href="../images/c03_dockerhub_repos.jpg" target="_blank"><img src="../images/c03_dockerhub_repos.jpg" alt="Docker Hub - 처음 push 하면 저장소가 저절로 생긴다 (공개)" loading="lazy"></a><figcaption>Docker Hub - 처음 push 하면 저장소가 저절로 생긴다 (공개)</figcaption></figure>
+<p>https://hub.docker.com 의 <strong>My Hub → Repositories</strong> 에 저장소 4개가 생겼다. 처음 push 한 저장소는 <strong>공개(Public)</strong> 로 만들어진다. 공개 이미지는 누구나 받을(pull) 수 있지만, 올리기(push)는 나만 할 수 있다.</p>
+<figure><a href="../images/c03_dockerhub_repos.jpg" target="_blank"><img src="../images/c03_dockerhub_repos.jpg" alt="Docker Hub 내 저장소 - msa- 로 시작하는 4개가 Public 으로 생겼다" loading="lazy"></a><figcaption>Docker Hub 내 저장소 - msa- 로 시작하는 4개가 Public 으로 생겼다</figcaption></figure>
 <blockquote class="note">
 <p><strong>[배포 개념] 이미지 창고(레지스트리)가 있으면 빌드와 실행을 나눌 수 있다.</strong> 빌드는 힘이 센 컴퓨터(내 PC, GitHub Actions)에서 하고, 메모리 1GB 짜리 서버는 <strong>다 만든 이미지를 받아서 켜기만</strong> 한다. 서버에 JDK, Gradle, Node.js, 소스 코드가 하나도 필요 없다.</p>
 <p><strong>이미지 안에 비밀 값이 있으면 안 된다.</strong> 공개 이미지는 누구나 받아서 열어 볼 수 있다. 이 교안의 이미지에는 비밀번호·열쇠가 없고, 서버에서 켤 때 환경 변수로 넣는다(1장). Dockerfile 에 <code>ENV DB_PASSWORD=...</code> 같은 줄을 쓰지 않는 까닭이다.</p>

@@ -5,7 +5,7 @@
 **[EC2]** 상태와 로그
 
 ```bash
-cd ~/app
+cd ~/app                                # compose 파일이 있는 폴더
 docker compose ps                       # 꺼진(Exited) 서비스가 있나, db 가 healthy 인가
 docker compose logs --tail 50 post-service   # 마지막 50줄
 ```
@@ -40,6 +40,9 @@ docker compose logs --tail 50 post-service   # 마지막 50줄
 
 | 증상 (실패한 스텝) | 원인 | 해결 |
 |---|---|---|
+| Actions 탭에 "Workflows aren't being run on this forked repository", Run workflow 단추가 없다 | Fork 한 저장소는 Actions 가 꺼져 있다 | 초록 **I understand my workflows, go ahead and enable them** 단추 (0-3) |
+| push 해도 Actions 에 아무것도 생기지 않는다 | 위와 같음, 또는 main 이 아닌 브랜치에 push | Actions 켜기, `git branch` 로 main 인지 확인 |
+| Variables·Secrets 를 넣었는데 목록에 없다 | "Confirm access"(본인 확인) 뒤에 입력 내용이 사라졌다 | 본인 확인 후 값을 다시 넣고 Add 단추 (6-2) |
 | 모든 잡이 회색(건너뜀) | Variables `DOCKERHUB_USERNAME` 이 없다 | 6-2 대로 Variables 넣기 |
 | build 는 초록, deploy 만 회색 | Variables `EC2_HOST` 가 없다 | `EC2_HOST` 넣기 |
 | SSH 키 준비 / 파일 복사 - `exit code 255` | `EC2_HOST` 가 예전 IP (EC2 를 중지·시작함), 인스턴스가 꺼짐 | 새 IP 로 `EC2_HOST` Update → Run workflow (7-4) |
@@ -51,7 +54,7 @@ docker compose logs --tail 50 post-service   # 마지막 50줄
 
 | 증상 (`docker compose logs`) | 원인 | 해결 |
 |---|---|---|
-| `password authentication failed for user "postgres"` | DB 를 처음 만든 비밀번호와 지금 `.env` 의 `DB_PASSWORD` 가 다르다 | `DB_PASSWORD` Secret 을 처음 값으로 되돌린다. 데이터를 버려도 되면 **[EC2]** `docker compose down -v` 후 Run workflow (볼륨을 지우고 새 비밀번호로 다시 만든다) |
+| `password authentication failed for user "postgres"` | DB 를 처음 만든 비밀번호와 지금 `.env` 의 `DB_PASSWORD` 가 다르다. 5장에서 메모장·`Set-Content` 로 만든 `.env` 라면 줄 끝의 보이지 않는 `\r` 때문에 달라졌을 수도 있다 | `DB_PASSWORD` Secret 을 처음 값으로 되돌린다. 데이터를 버려도 되면 **[EC2]** `docker compose down -v` 후 Run workflow (볼륨을 지우고 새 비밀번호로 다시 만든다) |
 | 서비스가 `Exited (137)` 로 꺼짐 | 메모리 부족으로 강제 종료(OOM) | `free -m` 으로 스왑이 켜졌는지 확인 (5-3). 재부팅 뒤 스왑이 없으면 `/etc/fstab` 줄 확인 |
 | 로그인하면 바로 로그아웃 / 401 | user-service 와 api-gateway 의 `JWT_SECRET` 이 다르다 | 둘 다 같은 `.env` 의 `JWT_SECRET` 을 쓰는지 compose 파일 확인 |
 | 글 작성 시각이 9시간 이르다 | 컨테이너 시간대가 UTC | compose 의 `TZ: Asia/Seoul` (7-1) |
