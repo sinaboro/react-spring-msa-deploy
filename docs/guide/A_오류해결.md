@@ -14,6 +14,7 @@ docker compose logs --tail 50 post-service   # 마지막 50줄
 
 | 증상 | 원인 | 해결 |
 |---|---|---|
+| `$key = ...` 가 "내부 또는 외부 명령... 이 아닙니다", `icacls $key` 가 파일을 못 찾는다 | VS Code 터미널이 PowerShell 이 아니라 **cmd** 다 (프롬프트에 `PS` 가 없다) | 터미널 오른쪽 위 **+ ∨ → PowerShell** (0장 0-4). 늘 PowerShell 로: **Select Default Profile** → PowerShell |
 | `docker compose up` 이 `error during connect` | Docker Desktop 이 꺼져 있다 | Docker Desktop 실행, 고래 아이콘이 멈출 때까지 기다리기 |
 | `Bind for 0.0.0.0:80 failed: port is already allocated` | 80 번을 다른 프로그램(IIS, 다른 컨테이너)이 쓰고 있다 | `docker ps` 로 겹치는 컨테이너 끄기. 아니면 compose 의 `"80:80"` 을 `"8000:80"` 으로 바꾸고 http://localhost:8000 |
 | http://localhost 에서 목록이 비고 콘솔에 502 | 서비스가 아직 켜지는 중 | 30초쯤 기다렸다 새로 고침. `docker compose logs api-gateway` |

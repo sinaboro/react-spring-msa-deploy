@@ -355,7 +355,20 @@ cd react-spring-msa-deploy   # 이후 [PS] 명령은 모두 이 폴더에서 친
 <blockquote class="note">
 <p><strong>교안 속 값은 모두 예시다.</strong> Docker Hub 사용자 이름 <code>rlaeocjf</code>, EC2 주소 <code>3.35.37.211</code> 같은 값은 강사가 교안을 만들 때 쓴 것이다. 따라 할 때는 <strong>내 사용자 이름, 내 EC2 주소</strong>로 바꿔 넣는다. 화면 캡처에서 AWS 계정 정보는 가렸다.</p>
 </blockquote>
-<h2 id="0-4-이-교안의-표시">0-4. 이 교안의 표시</h2>
+<h2 id="0-4-powershell-여는-법">0-4. PowerShell 여는 법</h2>
+<p><strong>[PS]</strong> 명령은 두 곳 중 편한 곳에서 친다.</p>
+<ol>
+<li><strong>Windows PowerShell 창</strong> - 시작 메뉴에서 <code>PowerShell</code> 을 찾아 <strong>Windows PowerShell</strong> 을 연다. 그다음 <code>cd C:\study\react-spring-msa-deploy</code>.</li>
+<li><strong>VS Code 터미널</strong> - VS Code 로 저장소 폴더(<code>C:\study\react-spring-msa-deploy</code>)를 열고 메뉴 <strong>보기(View) → 터미널(Terminal)</strong> (단축키 <code>Ctrl+`</code>). 터미널이 처음부터 저장소 폴더에서 열려 편하다.</li>
+</ol>
+<figure><a href="../images/vs_view_menu.jpg" target="_blank"><img src="../images/vs_view_menu.jpg" alt="VS Code 보기(View) 메뉴 - 터미널(Terminal)" loading="lazy"></a><figcaption>VS Code 보기(View) 메뉴 - 터미널(Terminal)</figcaption></figure>
+<p><strong>VS Code 터미널이라면 종류를 꼭 확인한다.</strong> 이 교안의 <code>$key = ...</code>, <code>icacls</code>, <code>Copy-Item</code>, <code>function New-Secret</code> 같은 명령은 <strong>PowerShell 에서만</strong> 동작한다. 프롬프트가 <code>PS C:\...&gt;</code> 로 시작하고 오른쪽 목록에 <code>powershell</code> 이 보이면 된다.</p>
+<figure><a href="../images/vs_terminal_ps_deploy.jpg" target="_blank"><img src="../images/vs_terminal_ps_deploy.jpg" alt="PowerShell 터미널 - 프롬프트가 PS 로 시작한다 (오른쪽 목록에 powershell)" loading="lazy"></a><figcaption>PowerShell 터미널 - 프롬프트가 PS 로 시작한다 (오른쪽 목록에 powershell)</figcaption></figure>
+<p>프롬프트에 <code>PS</code> 가 없고 오른쪽에 <code>cmd</code> 라고 나오면 <strong>명령 프롬프트(cmd)</strong> 다. 교안을 만든 PC 도 VS Code 기본 터미널이 cmd 로 되어 있었다.</p>
+<figure><a href="../images/vs_terminal_cmd.jpg" target="_blank"><img src="../images/vs_terminal_cmd.jpg" alt="cmd 터미널 - PS 가 없다. 이대로 쓰지 않는다" loading="lazy"></a><figcaption>cmd 터미널 - PS 가 없다. 이대로 쓰지 않는다</figcaption></figure>
+<p>그럴 때는 터미널 오른쪽 위 <strong>+</strong> 옆의 <strong>∨</strong> → <strong>PowerShell</strong>. 늘 PowerShell 로 열리게 하려면 같은 목록의 <strong>Select Default Profile</strong>(기본 프로필 선택) → <strong>PowerShell</strong>.</p>
+<figure><a href="../images/vs_terminal_profiles.jpg" target="_blank"><img src="../images/vs_terminal_profiles.jpg" alt="+ 옆 ∨ 목록 - PowerShell 을 고른다" loading="lazy"></a><figcaption>+ 옆 ∨ 목록 - PowerShell 을 고른다</figcaption></figure>
+<h2 id="0-5-이-교안의-표시">0-5. 이 교안의 표시</h2>
 <ul>
 <li><strong>[PS]</strong> 표시 아래 명령은 <strong>내 PC 의 PowerShell</strong> 에서 친다.</li>
 <li><strong>[EC2]</strong> 표시 아래 명령은 <code>ssh</code> 로 접속한 <strong>EC2 서버의 터미널</strong>(<code>ubuntu@ip-...:~$</code>)에서 친다. 둘을 헷갈리면 "명령을 찾을 수 없다" 는 오류가 난다.</li>
