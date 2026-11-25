@@ -23,7 +23,7 @@ docker-compose.yml           내 PC 에서 빌드해서 운영처럼 실행 (htt
 deploy/docker-compose.prod.yml   EC2 에서 Docker Hub 이미지를 받아 실행
 .github/workflows/deploy.yml     push → 빌드 → Docker Hub → EC2 배포
 docs/guide/                  배포 교안 원고 (0~8장, 부록 A·B) → PDF · 웹 교안
-tools/                       교안 빌드 (그림 make_figures, PDF build_guide, 웹 build_site)
+tools/                       교안 빌드 (그림 make_figures, 캡처 강조 상자 annotate, PDF build_guide, 웹 build_site)
 .env.example                 내 PC 용 .env 본보기 (DOCKERHUB_USERNAME)
 ```
 

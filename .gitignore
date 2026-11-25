@@ -19,3 +19,6 @@ __pycache__/
 
 # 교안 캡처 원본 (계정 정보를 가리기 전)
 docs/images/raw/
+
+# 상자 그림 확인용 미리보기
+tools/annot_preview/
