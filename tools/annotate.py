@@ -59,7 +59,10 @@ BOXES = {
 def draw(name, boxes):
     im = Image.open(BASE / name).convert("RGB")
     d = ImageDraw.Draw(im)
-    w = max(3, round(min(im.size) / 160))            # 그림 크기에 맞춘 선 굵기
+    # 선 굵기: PDF 에 줄어 들어갈 비율을 계산해서 종이 위에서 약 2.6pt 가 되게 한다
+    #   (build_guide 의 그림 폭: 본문 폭의 86% = 약 424pt, 단 원래 크기 × 0.55pt 를 넘지 않음)
+    shown = min(424, im.width * 0.55)
+    w = max(3, round(2.6 * im.width / shown))
     for x0, y0, x1, y1 in boxes:
         d.rounded_rectangle((x0, y0, x1, y1), radius=w * 3, outline=PINK, width=w)
     im.save(OUT / name, quality=92)
