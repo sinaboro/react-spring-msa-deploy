@@ -4,6 +4,7 @@
 
 - **CI/CD** 와 GitHub Actions 의 **워크플로·잡·스텝** 을 설명한다.
 - 저장소에 **Variables**(비밀 아님)와 **Secrets**(비밀)를 나눠 넣는다.
+- `deploy.yml` 이 저장소의 **어디에** 있고, push 하면 **어떤 순서로** 실행되는지 안다.
 - `deploy.yml` 을 위에서 아래로 읽으며, 5장에서 손으로 한 일과 짝을 맞춘다.
 
 ## 6-1. CI/CD 와 GitHub Actions
@@ -22,6 +23,57 @@
 | 러너(runner) | 잡을 실행하는 GitHub 의 임시 컴퓨터 (Ubuntu) | 잡이 끝나면 사라진다 |
 
 ![deploy.yml 이 하는 일 - 이미지 4개를 동시에 빌드한 뒤 배포하고 확인한다](../images/fig_workflow_flow.png)
+
+### deploy.yml 은 어디에 있나 - 이미 저장소에 들어 있다
+
+GitHub Actions 는 **정해진 폴더**에 있는 yml 파일만 워크플로로 알아본다.
+
+```text
+react-spring-msa-deploy/          ← 저장소 맨 위
+└─ .github/                       ← 점(.)으로 시작한다. 이름이 정확히 .github 이어야 한다
+   └─ workflows/                  ← s 가 붙은 workflows. 이 폴더 안의 *.yml 이 모두 워크플로다
+      └─ deploy.yml               ← 파일 이름은 자유. 이 교안의 워크플로 (name: deploy)
+```
+
+- **이 파일은 새로 만들 필요가 없다.** 0-3 에서 강사 저장소를 Fork 할 때 `.github/workflows/deploy.yml` 도 함께 복사됐다. 이 장에서는 이 파일을 **읽고**(6-3, 6-4), 6-2 에서 이 파일이 쓸 값을 넣어 줄 뿐이다.
+- 폴더 이름이 하나라도 틀리면(`.github/workflow`, `github/workflows` 등) GitHub 는 그 파일을 그냥 글자 파일로 보고 아무것도 실행하지 않는다.
+- 다른 저장소에 처음 만들 때는 이 경로에 yml 파일을 만들어 push 하거나, GitHub 의 **Actions** 탭 → **set up a workflow yourself** 로 만든다. 어느 쪽이든 결과는 같은 경로의 파일이다.
+
+GitHub 의 내 저장소 첫 화면에서 `.github/workflows` 폴더를 볼 수 있다. VS Code 탐색기에서도 저장소 맨 위에 `.github` 폴더로 보인다.
+
+![저장소 첫 화면 - .github/workflows 폴더와 위쪽 Actions 탭](../images/n01_repo_root.jpg)
+
+폴더를 눌러 `deploy.yml` 을 열면 내용이 보인다. 오른쪽 위 **View runs** 를 누르면 이 워크플로가 실행된 기록(Actions 탭)으로 바로 간다.
+
+![GitHub 에서 연 deploy.yml - 경로가 .github / workflows / deploy.yml](../images/n02_workflow_file.jpg)
+
+### push 하면 무슨 일이 일어나나 - 순서대로
+
+```text
+① 내 PC 에서 git push (main 브랜치)
+        │
+② GitHub 가 그 커밋의 .github/workflows/*.yml 을 모두 읽는다
+   └─ deploy.yml 의 on: push: branches: [main] 이 맞는다 → "실행하자"
+        │
+③ GitHub 가 러너(Ubuntu 가상 컴퓨터)를 새로 빌려 준다  ← 우리 PC 도, EC2 도 아닌 GitHub 의 컴퓨터
+        │
+④ 러너에서 jobs 를 차례로 실행한다
+   ├─ build 잡 4개 (동시에): 소스 받기 → Docker 로그인 → 이미지 빌드 → Docker Hub 에 push
+   └─ deploy 잡 (build 가 모두 성공하면): SSH 로 EC2 에 접속 → 파일 복사 → pull·up -d → 확인
+        │
+⑤ 결과가 Actions 탭에 초록(성공) / 빨강(실패)으로 남는다. 러너는 지워진다
+```
+
+| 궁금한 것 | 답 |
+|---|---|
+| 워크플로를 켜는 스위치는? | 파일 안의 `on:` 이다. 이 교안은 `push`(main 에 올릴 때)와 `workflow_dispatch`(Actions 탭의 Run workflow 단추) 두 가지 |
+| 명령은 어디서 실행되나? | `runs-on: ubuntu-latest` 가 정한 **GitHub 의 러너**에서. 내 PC 가 꺼져 있어도 돈다 |
+| EC2 에는 어떻게 명령을 보내나? | 러너가 `ssh`·`scp` 로 EC2 에 접속해서 보낸다 (5장에서 내 PC 가 하던 일을 러너가 대신 한다) |
+| 비밀 값은 어디서 오나? | `${{ secrets.이름 }}` 자리에 GitHub 가 6-2 에서 넣은 값을 채워 준다. 로그에는 `***` 로 가려진다 |
+| deploy.yml 을 고치면? | 고친 파일을 push 하는 순간부터 새 내용으로 돈다. 따로 "등록" 하는 단계가 없다 |
+| 실행 결과는 어디서 보나? | 저장소의 **Actions** 탭 → 왼쪽 **deploy** → 실행 하나를 누르면 잡과 스텝별 로그가 보인다 (6-5) |
+
+> **[배포 개념] 워크플로 = "서버 관리자가 할 일을 적은 대본"** 이다. 5장에서 사람이 손으로 친 명령(빌드, 업로드, scp, `docker compose pull`)을 yml 파일에 순서대로 적어 두면, GitHub 가 push 할 때마다 빈 컴퓨터를 빌려 그 대본을 그대로 실행한다. 사람마다 순서를 빼먹거나 틀리는 일이 없어진다.
 
 ## 6-2. Variables 와 Secrets
 
@@ -60,29 +112,72 @@ Secrets 는 **한 번 넣으면 GitHub 화면에서도 다시 볼 수 없다**(�
 
 ![New secret - 이름과 값을 넣는다. 넣은 뒤에는 값을 다시 볼 수 없다](../images/f04_secret_new.jpg)
 
-| Name | Secret 에 붙여 넣을 값 |
-|---|---|
-| `DOCKERHUB_TOKEN` | 3장에서 만든 Access Token (`dckr_pat_...`, **Read & Write**) |
-| `EC2_SSH_KEY` | `msa-deploy-key.pem` 파일의 **내용 전체** |
-| `DB_PASSWORD` | `server.env` 의 DB_PASSWORD 값 |
-| `JWT_SECRET` | `server.env` 의 JWT_SECRET 값 |
+| Name | 넣을 값 | 그 값이 있는 곳 |
+|---|---|---|
+| `DOCKERHUB_TOKEN` | Docker Hub Access Token (`dckr_pat_...`, **Read & Write**) | 3장에서 메모장에 잠깐 붙여 둔 것 |
+| `EC2_SSH_KEY` | 열쇠 파일의 **내용 전체** (BEGIN 줄부터 END 줄까지) | `msa-deploy-key.pem` (5-1 의 `$key`) |
+| `DB_PASSWORD` | `DB_PASSWORD=` **뒤의** 40글자 | 5장에서 만든 `server.env` |
+| `JWT_SECRET` | `JWT_SECRET=` **뒤의** 40글자 | 5장에서 만든 `server.env` |
 
-**[PS]** 값을 하나씩 클립보드에 복사하기 - 한 줄 치고 → GitHub 에 붙여 넣고(Ctrl+V) → 다음 줄
+#### 값을 옮기는 두 가지 방법 - 편한 것 하나만 고른다
+
+**방법 1. 메모장에서 직접 복사** - `server.env` 와 `.pem` 파일을 메모장으로 열고, 필요한 부분을 마우스로 골라 Ctrl+C → GitHub 의 Secret 칸에 Ctrl+V. 이것만으로 충분하다.
+
+**방법 2. PowerShell 명령으로 복사** - 아래 명령은 파일에서 **필요한 부분만 정확히 골라 클립보드에 넣는다.** Ctrl+C 를 명령이 대신 해 주는 것이다. 방법 1 과 결과는 같다.
+
+> **왜 굳이 명령으로 복사할까?** Secrets 는 **넣은 뒤에 다시 볼 수 없다**(위 그림 설명). 그래서 틀린 값을 넣어도 화면에서 확인할 방법이 없고, 6-5 의 실행이 실패하고 나서야 알게 된다. 손으로 고를 때 실제로 자주 나는 실수는 셋이다.
+>
+> ① `.pem` 은 30줄 가까이 되는데, 드래그하다 첫 줄(`-----BEGIN RSA PRIVATE KEY-----`)이나 끝 줄(`-----END ...-----`)을 빠뜨린다 → SSH 접속 실패
+>
+> ② `DB_PASSWORD=` 까지 함께 복사하거나, 40글자 중 앞뒤 몇 글자를 놓친다 → 5장 서버의 DB 비밀번호와 달라져 DB 접속 실패
+>
+> ③ 값 뒤에 빈칸이나 줄바꿈이 따라 들어간다 → 눈에 안 보이지만 다른 값이 된다
+>
+> 명령으로 복사하면 이 셋이 생기지 않는다. 메모장으로 해도 되지만, 위 세 가지를 꼭 확인한다.
+
+방법 2 는 **명령 한 줄 → GitHub 에 붙여 넣기 → 다음 명령** 순서로 한다. PowerShell 창과 GitHub 화면을 나란히 띄워 두면 편하다.
+
+**[PS]** 준비 - `server.env` 가 있는 저장소 폴더로 가고, 열쇠 경로를 확인한다
 
 ```powershell
-cd C:\study\react-spring-msa-deploy                                                 # server.env 가 있는 저장소 폴더로
-Get-Content $key -Raw | Set-Clipboard                                              # EC2_SSH_KEY 용: .pem 파일 내용 전체
-(Select-String '^DB_PASSWORD=(.*)' server.env).Matches.Groups[1].Value | Set-Clipboard   # DB_PASSWORD 용: = 뒤의 값만
-(Select-String '^JWT_SECRET=(.*)' server.env).Matches.Groups[1].Value | Set-Clipboard    # JWT_SECRET 용: = 뒤의 값만
+cd C:\study\react-spring-msa-deploy     # server.env 를 만든 곳 (5-5)
+Test-Path server.env                    # True 가 나와야 한다. False 면 5-5 의 server.env 만들기부터
+$key                                    # 열쇠 파일 경로가 보여야 한다. 아무것도 안 나오면 5-1 의 첫 줄($key = ...)을 다시 친다
 ```
 
-> 메모장으로 `server.env` 를 열고 `=` **뒤의 값만** 골라 복사해도 된다. `DB_PASSWORD=` 까지 함께 붙여 넣으면 비밀번호가 달라진다. 앞뒤에 빈칸이 들어가지 않게 조심한다.
+**[PS]** ① `EC2_SSH_KEY` - 열쇠 파일 내용 전체를 클립보드로
 
-> `$key` 는 5-1 에서 만든 변수다. PowerShell 창을 새로 열었다면 5-1 의 첫 줄(`$key = ...`)을 다시 친다.
+```powershell
+# Get-Content $key -Raw : 열쇠 파일을 줄 나눔 없이 "통째로 한 덩어리" 로 읽는다 (-Raw 가 없으면 줄마다 따로 읽혀 줄바꿈이 사라질 수 있다)
+# | Set-Clipboard       : 앞에서 읽은 내용을 클립보드에 넣는다 (= 마우스로 골라 Ctrl+C 한 것과 같다)
+Get-Content $key -Raw | Set-Clipboard
+```
 
-`-----BEGIN RSA PRIVATE KEY-----` 줄부터 `-----END RSA PRIVATE KEY-----` 줄까지 **빠짐없이** 붙여 넣는다. 한 줄이라도 빠지면 6-4 의 SSH 스텝이 `Load key ... invalid format` 으로 실패한다.
+→ GitHub: **New repository secret** → Name `EC2_SSH_KEY` → Secret 칸에 **Ctrl+V** → **Add secret**. 붙여 넣은 첫 줄이 `-----BEGIN RSA PRIVATE KEY-----`, 끝 줄이 `-----END RSA PRIVATE KEY-----` 인지 눈으로 본 뒤 누른다.
 
-> **DB_PASSWORD 는 5장의 값과 같아야 한다.** PostgreSQL 은 **처음 켤 때** 받은 비밀번호로 DB 를 만들고, 그 뒤로는 `POSTGRES_PASSWORD` 가 바뀌어도 DB 비밀번호를 바꾸지 않는다(데이터는 볼륨에 남아 있으므로). 다른 값을 넣으면 서비스가 `password authentication failed` 로 DB 에 접속하지 못한다. (부록 A)
+**[PS]** ② `DB_PASSWORD` - `server.env` 에서 `DB_PASSWORD=` 뒤의 값만 클립보드로
+
+```powershell
+# Select-String '^DB_PASSWORD=(.*)' server.env : server.env 에서 "DB_PASSWORD= 로 시작하는 줄" 을 찾는다
+#     ^ 는 "줄의 맨 앞", (.*) 는 "= 뒤의 나머지 전부" 를 괄호로 잡아 둔다는 뜻 (정규식)
+# .Matches.Groups[1].Value : 찾은 줄에서 괄호로 잡은 부분(= 뒤 40글자)만 꺼낸다
+# | Set-Clipboard          : 그 40글자만 클립보드에 넣는다
+(Select-String '^DB_PASSWORD=(.*)' server.env).Matches.Groups[1].Value | Set-Clipboard
+```
+
+→ GitHub: **New repository secret** → Name `DB_PASSWORD` → Secret 칸에 **Ctrl+V** → **Add secret**.
+
+**[PS]** ③ `JWT_SECRET` - 같은 방법으로 `JWT_SECRET=` 뒤의 값만
+
+```powershell
+(Select-String '^JWT_SECRET=(.*)' server.env).Matches.Groups[1].Value | Set-Clipboard   # ② 와 같고 찾는 이름만 JWT_SECRET
+```
+
+→ GitHub: **New repository secret** → Name `JWT_SECRET` → Secret 칸에 **Ctrl+V** → **Add secret**.
+
+④ `DOCKERHUB_TOKEN` 은 명령이 필요 없다. 3장에서 메모장에 붙여 둔 토큰(`dckr_pat_...`)을 복사해 같은 방법으로 넣는다. 메모장이 닫혀 토큰이 없으면 3-2 대로 새로 만든다.
+
+> **DB_PASSWORD 는 5장의 값과 같아야 한다.** PostgreSQL 은 **처음 켤 때** 받은 비밀번호로 DB 를 만들고, 그 뒤로는 `POSTGRES_PASSWORD` 가 바뀌어도 DB 비밀번호를 바꾸지 않는다(데이터는 볼륨에 남아 있으므로). 다른 값을 넣으면 서비스가 `password authentication failed` 로 DB 에 접속하지 못한다. 그래서 새로 만들지 않고 5장의 `server.env` 에서 그대로 옮기는 것이다. (부록 A)
 
 ![Secrets 4개를 넣은 모습 - 값은 보이지 않는다](../images/f05_secrets_list.jpg)
 
@@ -105,12 +200,23 @@ Set-Clipboard -Value " "    # 클립보드에 남은 비밀 값 지우기
 # =====================================================================
 # deploy.yml - main 브랜치에 push 하면 자동으로 "빌드 → Docker Hub → EC2 배포"
 #
+# 이 파일의 자리: 저장소의 .github/workflows/deploy.yml
+#   GitHub 는 .github/workflows 폴더 안의 yml 파일만 "워크플로" 로 알아본다.
+#   push 할 때마다 GitHub 가 이 파일을 읽고, 아래 on: 조건이 맞으면
+#   GitHub 의 임시 컴퓨터(러너, runner)를 빌려 jobs 를 차례로 실행한다.
+#
 # 흐름
 #   ① build  : 이미지 4개를 동시에(matrix) 만들어 Docker Hub 에 올린다
 #   ② deploy : EC2 에 SSH 로 접속해 새 이미지를 받아(pull) 다시 켠다(up -d)
 #   ③ 확인   : http://EC2주소/api/posts 가 200 을 돌려줄 때까지 기다린다
 #
-# 저장소 Settings → Secrets and variables → Actions 에 미리 넣어 둘 값
+# 읽는 법
+#   ${{ vars.이름 }}    저장소 Settings 의 Variables 값으로 바뀐다 (로그에 그대로 보임)
+#   ${{ secrets.이름 }} 저장소 Settings 의 Secrets 값으로 바뀐다 (로그에 *** 로 가려짐)
+#   uses: 남이 만들어 둔 "액션" 을 가져다 쓴다 (예: 소스 받기, Docker 로그인)
+#   run:  러너의 리눅스 셸(bash)에서 명령을 직접 실행한다. run: | 아래 여러 줄은 차례로 실행된다
+#
+# 저장소 Settings → Secrets and variables → Actions 에 미리 넣어 둘 값 (교안 6-2)
 #   Variables (비밀 아님, 로그에 그대로 보임)
 #     DOCKERHUB_USERNAME  Docker Hub 사용자 이름        예) rlaeocjf
 #     EC2_HOST            EC2 공인 IP 또는 주소          예) 3.35.xx.xx
@@ -122,25 +228,25 @@ Set-Clipboard -Value " "    # 클립보드에 남은 비밀 값 지우기
 #     JWT_SECRET          JWT 서명 열쇠 (32글자 이상)
 # =====================================================================
 
-name: deploy
+name: deploy                  # Actions 탭 왼쪽 목록에 보이는 워크플로 이름
 
-on:
+on:                           # 언제 실행할까 (이 조건이 맞을 때만 돈다)
   push:
-    branches: [main]
+    branches: [main]          # main 브랜치에 push 할 때 (다른 브랜치 push 는 무시)
   workflow_dispatch:          # Actions 화면의 "Run workflow" 단추로 직접 실행할 수도 있게
 
-jobs:
+jobs:                         # 할 일 묶음(잡). 잡마다 새 러너에서 따로 돈다
   # ---------------------------------------------------------------- ① 이미지 빌드·업로드
   build:
     # 아직 Variables 를 넣지 않았으면(저장소를 막 만들었거나 포크했을 때) 건너뛴다 → 빨간 실패 표시가 생기지 않는다
     if: ${{ vars.DOCKERHUB_USERNAME != '' }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest    # GitHub 가 빌려주는 최신 Ubuntu 컴퓨터에서 실행 (Docker 가 이미 깔려 있다)
     strategy:
       matrix:                 # 아래 4가지를 동시에 실행한다 (작업 4개가 나란히 돈다)
-        include:
-          - image: msa-user-service
-            context: backend
-            service: user-service
+        include:              #   각 줄의 값은 아래 스텝에서 ${{ matrix.이름 }} 으로 꺼내 쓴다
+          - image: msa-user-service     # Docker Hub 에 올릴 이미지 이름
+            context: backend            # Dockerfile 이 있는 폴더 (docker build 의 기준 폴더)
+            service: user-service       # backend/Dockerfile 의 ARG SERVICE 로 넘길 값 (어느 서비스를 구울지)
           - image: msa-post-service
             context: backend
             service: post-service
@@ -148,27 +254,27 @@ jobs:
             context: backend
             service: api-gateway
           - image: msa-frontend
-            context: frontend
+            context: frontend           # frontend/Dockerfile 은 SERVICE 값이 필요 없다
             service: ""
-    steps:
-      - name: 소스 받기
+    steps:                    # 이 잡에서 차례로 할 일
+      - name: 소스 받기       # 러너는 빈 컴퓨터라, 먼저 이 저장소의 코드를 내려받는다 (git clone 과 같다)
         uses: actions/checkout@v5
 
-      - name: Docker Buildx 준비
+      - name: Docker Buildx 준비   # 빌드 결과를 GitHub 캐시에 저장·재사용할 수 있는 docker 빌드 도구를 켠다
         uses: docker/setup-buildx-action@v4
 
-      - name: Docker Hub 로그인
+      - name: Docker Hub 로그인    # 내 PC 에서 한 docker login 과 같다 (비밀번호 자리에 토큰)
         uses: docker/login-action@v4
         with:
           username: ${{ vars.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: 이미지 빌드 후 Docker Hub 에 올리기
+      - name: 이미지 빌드 후 Docker Hub 에 올리기   # docker build + docker push 를 한 번에
         uses: docker/build-push-action@v7
         with:
-          context: ${{ matrix.context }}
-          build-args: SERVICE=${{ matrix.service }}
-          push: true
+          context: ${{ matrix.context }}          # backend 또는 frontend 폴더로 빌드
+          build-args: SERVICE=${{ matrix.service }}   # Dockerfile 의 ARG SERVICE 에 넘길 값
+          push: true                               # 빌드가 끝나면 Docker Hub 로 올린다
           # latest(늘 최신) + 커밋 번호(어느 코드로 만든 이미지인지 남기기) 두 가지 이름을 붙인다
           tags: |
             ${{ vars.DOCKERHUB_USERNAME }}/${{ matrix.image }}:latest
@@ -179,25 +285,25 @@ jobs:
 
   # ---------------------------------------------------------------- ② EC2 배포
   deploy:
-    needs: build              # ① 이 4개 모두 성공해야 시작한다
+    needs: build              # ① 이 4개 모두 성공해야 시작한다 (하나라도 실패하면 서버는 건드리지 않는다)
     if: ${{ vars.EC2_HOST != '' }}   # EC2 를 아직 만들지 않았으면 배포는 건너뛴다 (이미지만 올린다)
-    runs-on: ubuntu-latest
-    env:
+    runs-on: ubuntu-latest    # build 와는 다른, 새 러너에서 돈다
+    env:                      # 이 잡의 모든 스텝에서 쓸 환경 변수 ($SSH_HOST 처럼 쓴다)
       SSH_HOST: ${{ vars.EC2_HOST }}
       SSH_USER: ${{ vars.EC2_USER }}
     steps:
       - name: 소스 받기 (서버에 보낼 compose 파일, init.sql)
         uses: actions/checkout@v5
 
-      - name: SSH 키 준비
+      - name: SSH 키 준비     # 5장 5-1 에서 .pem 을 내 PC 에 두고 권한을 좁힌 것과 같은 일
         run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/ec2.pem
-          chmod 600 ~/.ssh/ec2.pem
-          # 서버의 지문(host key)을 미리 등록해 "정말 접속할까요? (yes/no)" 질문을 없앤다
+          mkdir -p ~/.ssh                                        # 러너에 ssh 설정 폴더 만들기
+          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/ec2.pem     # Secret 에 넣은 .pem 내용을 파일로 쓴다
+          chmod 600 ~/.ssh/ec2.pem                               # 나만 읽게 (권한이 넓으면 ssh 가 거부한다)
+          # 서버의 지문(host key)을 미리 등록해 "정말 접속할까요? (yes/no)" 질문을 없앤다 (자동 실행이라 yes 를 칠 사람이 없다)
           ssh-keyscan -H "$SSH_HOST" >> ~/.ssh/known_hosts
 
-      - name: 서버에 보낼 .env 만들기 (비밀 값은 Secrets 에서)
+      - name: 서버에 보낼 .env 만들기 (비밀 값은 Secrets 에서)   # 5-5 에서 server.env 를 만든 것과 같다
         run: |
           cat > .env <<EOF
           DOCKERHUB_USERNAME=${{ vars.DOCKERHUB_USERNAME }}
@@ -205,28 +311,29 @@ jobs:
           JWT_SECRET=${{ secrets.JWT_SECRET }}
           EOF
 
-      - name: 파일 복사 (compose, .env, init.sql)
+      - name: 파일 복사 (compose, .env, init.sql)   # 5-5 의 scp 3번과 같다
         run: |
-          ssh -i ~/.ssh/ec2.pem "$SSH_USER@$SSH_HOST" "mkdir -p ~/app/db"
-          scp -i ~/.ssh/ec2.pem deploy/docker-compose.prod.yml "$SSH_USER@$SSH_HOST:~/app/docker-compose.yml"
-          scp -i ~/.ssh/ec2.pem .env "$SSH_USER@$SSH_HOST:~/app/.env"
-          scp -i ~/.ssh/ec2.pem db/init.sql "$SSH_USER@$SSH_HOST:~/app/db/init.sql"
+          ssh -i ~/.ssh/ec2.pem "$SSH_USER@$SSH_HOST" "mkdir -p ~/app/db"                                  # 서버에 폴더 만들기
+          scp -i ~/.ssh/ec2.pem deploy/docker-compose.prod.yml "$SSH_USER@$SSH_HOST:~/app/docker-compose.yml"  # 서버용 compose
+          scp -i ~/.ssh/ec2.pem .env "$SSH_USER@$SSH_HOST:~/app/.env"                                        # 비밀 값
+          scp -i ~/.ssh/ec2.pem db/init.sql "$SSH_USER@$SSH_HOST:~/app/db/init.sql"                          # DB 2개 만들기
 
-      - name: 새 이미지 받아서 다시 켜기
+      - name: 새 이미지 받아서 다시 켜기   # 5-5 에서 서버에 접속해 친 명령을 ssh 로 원격 실행
         run: |
+          # pull: Docker Hub 의 새 latest 받기 → up -d: 이미지가 바뀐 컨테이너만 새로 켜기 → prune: 이름 없는 옛 이미지 지우기(디스크 절약)
           ssh -i ~/.ssh/ec2.pem "$SSH_USER@$SSH_HOST" "cd ~/app && docker compose pull && docker compose up -d && docker image prune -f"
 
       # ---------------------------------------------------------------- ③ 확인
-      - name: 배포 확인 (최대 3분 기다림)
+      - name: 배포 확인 (최대 3분 기다림)   # Spring 서비스가 다 켜질 때까지 5초마다 물어본다
         run: |
-          for i in $(seq 1 36); do
-            code=$(curl -s -o /dev/null -w "%{http_code}" "http://$SSH_HOST/api/posts" || true)
-            echo "$i 번째 확인: $code"
-            if [ "$code" = "200" ]; then echo "배포 성공! http://$SSH_HOST"; exit 0; fi
+          for i in $(seq 1 36); do                                   # 36번 × 5초 = 최대 3분
+            code=$(curl -s -o /dev/null -w "%{http_code}" "http://$SSH_HOST/api/posts" || true)   # 응답 코드만 받기
+            echo "$i 번째 확인: $code"                               # 502·503 이면 아직 켜지는 중
+            if [ "$code" = "200" ]; then echo "배포 성공! http://$SSH_HOST"; exit 0; fi   # 200 이면 성공으로 끝
             sleep 5
           done
           echo "3분 안에 응답이 없습니다. 서버에서 docker compose logs 를 확인하세요."
-          exit 1
+          exit 1                                                     # 실패로 끝 → Actions 에 빨간 표시
 ```
 
 위에서부터 끊어 읽자.

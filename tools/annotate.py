@@ -48,6 +48,8 @@ BOXES = {
     "k03_token_default.jpg": [(28, 303, 528, 345)],
     "k04_token_permissions.jpg": [(28, 420, 528, 456)],
     "k05_token_readwrite.jpg": [(28, 303, 528, 345), (97, 415, 182, 453)],
+    "n01_repo_root.jpg": [(165, 302, 1048, 328), (410, 62, 492, 92)],
+    "n02_workflow_file.jpg": [(333, 20, 788, 46), (36, 182, 294, 210), (1378, 18, 1470, 48)],
     "vs_view_menu.jpg": [(150, 330, 362, 354)],
     "vs_terminal_ps_deploy.jpg": [(12, 38, 280, 64), (1304, 54, 1555, 84)],
     "vs_terminal_cmd.jpg": [(1323, 6, 1377, 32), (12, 88, 163, 114)],
@@ -64,7 +66,10 @@ def draw(name, boxes):
     shown = min(424, im.width * 0.55)
     w = max(3, round(2.6 * im.width / shown))
     for x0, y0, x1, y1 in boxes:
-        d.rounded_rectangle((x0, y0, x1, y1), radius=w * 3, outline=PINK, width=w)
+        # 작은 상자는 선을 가늘게 (글자를 덮지 않게), 그리고 상자 바깥쪽으로 그린다
+        bw = max(3, min(w, round(min(x1 - x0, y1 - y0) / 4)))
+        g = bw // 2 + 2
+        d.rounded_rectangle((x0 - g, y0 - g, x1 + g, y1 + g), radius=bw * 3, outline=PINK, width=bw)
     im.save(OUT / name, quality=92)
     return im
 

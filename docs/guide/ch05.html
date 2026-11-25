@@ -216,73 +216,82 @@ docker ps                 # 지금 도는 컨테이너 목록 (아직 없으니 
 #   - 비밀 값(DB_PASSWORD, JWT_SECRET)은 같은 폴더의 .env 파일에서 읽는다.
 #     .env 는 GitHub Actions 가 GitHub Secrets 로 만들어 준다 (GitHub 저장소에는 올라가지 않는다).
 #   - 기본값(:-postgres 같은)을 두지 않는다. .env 가 없으면 바로 오류가 나서 실수를 알아챌 수 있다.
+#
+# 읽는 법
+#   ${이름}          같은 폴더 .env 의 값으로 바뀐다
+#   ${이름:?문장}    .env 에 값이 없으면 &quot;문장&quot; 을 오류로 보여 주고 멈춘다
 # =====================================================================
 
-name: msa-deploy
+name: msa-deploy                # 컨테이너 이름 앞에 붙는 프로젝트 이름 (msa-deploy-db-1 처럼)
 
 services:
+  # ---------- 데이터베이스: 컨테이너 1개, DB 2개 (userdb, postdb) ----------
   db:
-    image: postgres:18
-    restart: unless-stopped
+    image: postgres:18           # Docker 공식 PostgreSQL 18 이미지 (Docker Hub 에서 받는다)
+    restart: unless-stopped      # 죽거나 서버가 재부팅되면 다시 켠다 (사람이 docker stop 한 경우만 빼고)
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD 가 .env 에 없습니다}
-      TZ: Asia/Seoul
-    command: [&quot;postgres&quot;, &quot;-c&quot;, &quot;timezone=Asia/Seoul&quot;]
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD 가 .env 에 없습니다}   # DB 를 &quot;처음&quot; 만들 때만 쓰이는 비밀번호
+      TZ: Asia/Seoul              # 컨테이너 시간대를 한국으로
+    command: [&quot;postgres&quot;, &quot;-c&quot;, &quot;timezone=Asia/Seoul&quot;]   # DB 의 기본 시간대도 한국으로
     volumes:
       - db_data:/var/lib/postgresql               # 글·회원 데이터 (컨테이너를 새로 만들어도 남는다)
       - ./db:/docker-entrypoint-initdb.d           # 처음 켤 때 userdb, postdb 생성
-    healthcheck:
+    healthcheck:                  # &quot;DB 가 요청을 받을 준비가 됐나&quot; 를 5초마다 검사한다
       test: [&quot;CMD-SHELL&quot;, &quot;pg_isready -U postgres -d postdb&quot;]
       interval: 5s
       timeout: 3s
-      retries: 20
+      retries: 20                 # 20번(약 100초)까지 기다린다. 통과하면 상태가 healthy 가 된다
 
+  # ---------- 회원 서비스 ----------
   user-service:
-    image: ${DOCKERHUB_USERNAME:?}/msa-user-service:latest
+    image: ${DOCKERHUB_USERNAME:?}/msa-user-service:latest   # GitHub Actions 가 올린 내 이미지
     restart: unless-stopped
-    environment:
+    environment:                  # application.yml 의 ${DB_URL} 같은 자리에 들어갈 값
       TZ: Asia/Seoul                              # 시간대를 한국으로 (없으면 UTC 라 글 작성 시각이 9시간 늦게 보인다)
-      DB_URL: jdbc:postgresql://db:5432/userdb
+      DB_URL: jdbc:postgresql://db:5432/userdb     # localhost 가 아니라 서비스 이름 db (같은 도커 네트워크)
       DB_PASSWORD: ${DB_PASSWORD:?}
-      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET 이 .env 에 없습니다}
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET 이 .env 에 없습니다}   # 토큰을 서명하는 열쇠 (게이트웨이와 같은 값)
     depends_on:
       db:
-        condition: service_healthy
+        condition: service_healthy                 # DB 의 healthcheck 가 통과한 뒤에 켠다
 
+  # ---------- 게시글 서비스 ----------
   post-service:
     image: ${DOCKERHUB_USERNAME:?}/msa-post-service:latest
     restart: unless-stopped
     environment:
       TZ: Asia/Seoul                              # 시간대를 한국으로 (없으면 UTC 라 글 작성 시각이 9시간 늦게 보인다)
-      DB_URL: jdbc:postgresql://db:5432/postdb
+      DB_URL: jdbc:postgresql://db:5432/postdb     # 게시글 서비스는 postdb 만 쓴다 (Database per Service)
       DB_PASSWORD: ${DB_PASSWORD:?}
     depends_on:
       db:
         condition: service_healthy
 
+  # ---------- 게이트웨이 (정문) ----------
   api-gateway:
     image: ${DOCKERHUB_USERNAME:?}/msa-api-gateway:latest
     restart: unless-stopped
     environment:
       TZ: Asia/Seoul                              # 시간대를 한국으로 (없으면 UTC 라 글 작성 시각이 9시간 늦게 보인다)
-      USER_SERVICE_URL: http://user-service:8081
+      USER_SERVICE_URL: http://user-service:8081   # 길 안내할 서비스 주소도 서비스 이름으로
       POST_SERVICE_URL: http://post-service:8082
-      JWT_SECRET: ${JWT_SECRET:?}
-    depends_on:
+      JWT_SECRET: ${JWT_SECRET:?}                  # user-service 가 서명한 토큰을 같은 열쇠로 검사한다
+    depends_on:                   # 두 서비스가 &quot;켜지기 시작한&quot; 뒤에 켠다 (다 켜질 때까지 기다리지는 않는다)
       - user-service
       - post-service
 
+  # ---------- 화면 (React + nginx) - 바깥에 열린 유일한 문 ----------
   frontend:
     image: ${DOCKERHUB_USERNAME:?}/msa-frontend:latest
     restart: unless-stopped
     ports:
-      - &quot;80:80&quot;                                    # 바깥(인터넷)에 열린 유일한 문
+      - &quot;80:80&quot;                                    # 서버의 80 번 → nginx 80 번. 바깥(인터넷)에 열린 유일한 문
     depends_on:
       - api-gateway
 
 volumes:
-  db_data:
+  db_data:                        # Docker 가 관리하는 저장 공간. docker compose down -v 를 해야만 지워진다
 </code></pre>
 <div class="tbl"><table>
 <thead>

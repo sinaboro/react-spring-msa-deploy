@@ -22,17 +22,17 @@ name: msa-deploy
 services:
   # ---------- 데이터베이스: 컨테이너 1개, DB 2개 (userdb, postdb) ----------
   db:
-    image: postgres:18
-    restart: unless-stopped
+    image: postgres:18                             # Docker 공식 PostgreSQL 18 이미지
+    restart: unless-stopped                        # 죽거나 PC 가 재부팅되면 다시 켠다 (docker stop 한 경우만 빼고)
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}   # .env 파일에 DB_PASSWORD 가 있으면 그 값, 없으면 postgres
       TZ: Asia/Seoul
-    command: ["postgres", "-c", "timezone=Asia/Seoul"]
+    command: ["postgres", "-c", "timezone=Asia/Seoul"]   # DB 의 기본 시간대도 한국으로
     volumes:
       - db_data:/var/lib/postgresql
       - ./db:/docker-entrypoint-initdb.d           # 처음 켤 때 userdb, postdb 를 만든다
-    healthcheck:
+    healthcheck:                                   # "DB 가 요청을 받을 준비가 됐나" 를 5초마다 검사 → 통과하면 healthy
       test: ["CMD-SHELL", "pg_isready -U postgres -d postdb"]
       interval: 5s
       timeout: 3s
@@ -99,4 +99,4 @@ services:
       - api-gateway
 
 volumes:
-  db_data:
+  db_data:                                         # Docker 가 관리하는 저장 공간. docker compose down -v 를 해야만 지워진다

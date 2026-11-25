@@ -184,7 +184,9 @@ footer{padding:40px 0 50px;color:var(--sub);font-size:14px;text-align:center}
 <p>토큰은 비밀번호와 같다. 화면 캡처, 카톡, GitHub 코드 어디에도 남기지 않는다. 메모장의 토큰은 6장에서 GitHub Secrets 에 넣은 뒤 지운다.</p>
 <h2 id="3-3-로그인하고-올리기">3-3. 로그인하고 올리기</h2>
 <p><strong>[PS]</strong> Docker Hub 로그인 - <code>Password:</code> 가 나오면 <strong>비밀번호가 아니라 토큰</strong>을 붙여 넣고 Enter</p>
-<pre><code class="language-powershell">docker login -u &lt;내DockerHub아이디&gt;    # 예: docker login -u rlaeocjf
+<pre><code class="language-powershell"># -u : 로그인할 사용자 이름. 비밀번호는 다음 줄에서 묻는다 (명령에 적지 않아야 기록에 남지 않는다)
+# 한 번 로그인하면 Windows 자격 증명에 저장돼서, 다음부터 push 할 때 다시 묻지 않는다
+docker login -u &lt;내DockerHub아이디&gt;    # 예: docker login -u rlaeocjf
 </code></pre>
 <pre><code class="language-text">Password:                 ← 토큰을 붙여 넣는다 (Ctrl+V 또는 마우스 오른쪽 클릭). 글자가 보이지 않는 것이 정상
 Login Succeeded
@@ -194,9 +196,11 @@ Login Succeeded
 </blockquote>
 <p>2장에서 만든 이미지 이름은 <code>local/msa-...</code> 였다. Docker Hub 에 올리려면 이름 앞부분이 <strong>내 사용자 이름</strong>이어야 한다. 저장소 폴더에 <code>.env</code> 파일을 만들면 compose 가 자동으로 읽어서 이름을 바꿔 준다.</p>
 <p><strong>[PS]</strong> <code>.env</code> 만들기 - <code>.env.example</code> 을 복사해서 사용자 이름만 바꾼다</p>
-<pre><code class="language-powershell">copy .env.example .env            # 본보기 파일을 .env 로 복사
+<pre><code class="language-powershell">copy .env.example .env            # 본보기 파일을 .env 로 복사 (.env 는 .gitignore 에 있어 GitHub 에 올라가지 않는다)
 notepad .env                      # 메모장이 열리면 DOCKERHUB_USERNAME=&lt;내DockerHub아이디&gt; 로 고치고 저장(Ctrl+S) 후 닫기
-docker compose config --images    # compose 가 만들 이미지 이름 확인
+# config --images : 실제로 빌드하지 않고, compose 가 .env 까지 읽어서 &quot;만들 이미지 이름&quot; 만 미리 보여 준다
+#                   앞부분이 local/ 이 아니라 내 아이디로 바뀌었는지 확인하는 용도
+docker compose config --images
 </code></pre>
 <pre><code class="language-text">rlaeocjf/msa-user-service:latest
 rlaeocjf/msa-post-service:latest
@@ -206,8 +210,11 @@ postgres:18
 </code></pre>
 <p>줄의 순서는 위와 다를 수 있다. 앞부분이 <code>local/</code> 이 아니라 <strong>내 아이디</strong>로 바뀌었으면 성공이다. (<code>.env</code> 는 <code>.gitignore</code> 에 있어 GitHub 에 올라가지 않는다)</p>
 <p><strong>[PS]</strong> 새 이름으로 빌드하고 4개만 push - 2장에서 한 번 빌드했으므로 캐시 덕분에 빠르다</p>
-<pre><code class="language-powershell">docker compose build                                                  # 이름만 바뀌고 내용은 캐시에서 (1분 안쪽)
-docker compose push user-service post-service api-gateway frontend    # 우리 이미지 4개만 Docker Hub 로 (처음엔 몇 분)
+<pre><code class="language-powershell"># build : 이미지 이름이 내 아이디로 바뀌었으니 그 이름으로 다시 굽는다. 내용은 2장의 캐시를 다시 써서 1분 안쪽
+docker compose build
+# push 서비스이름... : 적은 서비스의 이미지만 Docker Hub 로 올린다
+#   db(postgres:18)는 남의 공식 이미지라 올리지 않으려고 우리 것 4개만 적는다. 처음에는 몇 분 걸린다
+docker compose push user-service post-service api-gateway frontend
 </code></pre>
 <pre><code class="language-text">[+] Pushing 4/4
  ✔ Pushing rlaeocjf/msa-user-service:latest

@@ -180,7 +180,7 @@ footer{padding:40px 0 50px;color:var(--sub);font-size:14px;text-align:center}
 <p><strong>[PS]</strong> 열쇠 파일과 서버용 .env 지우기</p>
 <pre><code class="language-powershell">Remove-Item &quot;$env:USERPROFILE\Desktop\공부자료\msa-deploy-key.pem&quot;   # 열쇠 파일 (서버를 지웠으니 쓸모가 없다. 경로는 내가 둔 곳으로)
 Remove-Item server.env -ErrorAction SilentlyContinue   # 6장에서 이미 지웠으면 조용히 넘어간다
-docker compose down -v          # 2장에서 켠 내 PC 의 컨테이너와 데이터
+docker compose down -v          # 2장에서 켠 내 PC 의 컨테이너를 지운다. -v 를 붙이면 DB 데이터(볼륨)까지 지운다
 </code></pre>
 <p><strong>⑧ 요금 확인</strong></p>
 <p>AWS 콘솔 오른쪽 위 계정 이름 → <strong>결제 및 비용 관리</strong> → 이번 달 요금을 본다. 지운 뒤 하루쯤 지나 0 에 가깝게 멈췄는지 한 번 더 확인하면 마음이 편하다.</p>

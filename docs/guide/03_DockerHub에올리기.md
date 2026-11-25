@@ -72,6 +72,8 @@ Docker Hub 에 로그인할 때 비밀번호 대신 **Access Token**(접근 토�
 **[PS]** Docker Hub 로그인 - `Password:` 가 나오면 **비밀번호가 아니라 토큰**을 붙여 넣고 Enter
 
 ```powershell
+# -u : 로그인할 사용자 이름. 비밀번호는 다음 줄에서 묻는다 (명령에 적지 않아야 기록에 남지 않는다)
+# 한 번 로그인하면 Windows 자격 증명에 저장돼서, 다음부터 push 할 때 다시 묻지 않는다
 docker login -u <내DockerHub아이디>    # 예: docker login -u rlaeocjf
 ```
 
@@ -87,9 +89,11 @@ Login Succeeded
 **[PS]** `.env` 만들기 - `.env.example` 을 복사해서 사용자 이름만 바꾼다
 
 ```powershell
-copy .env.example .env            # 본보기 파일을 .env 로 복사
+copy .env.example .env            # 본보기 파일을 .env 로 복사 (.env 는 .gitignore 에 있어 GitHub 에 올라가지 않는다)
 notepad .env                      # 메모장이 열리면 DOCKERHUB_USERNAME=<내DockerHub아이디> 로 고치고 저장(Ctrl+S) 후 닫기
-docker compose config --images    # compose 가 만들 이미지 이름 확인
+# config --images : 실제로 빌드하지 않고, compose 가 .env 까지 읽어서 "만들 이미지 이름" 만 미리 보여 준다
+#                   앞부분이 local/ 이 아니라 내 아이디로 바뀌었는지 확인하는 용도
+docker compose config --images
 ```
 
 ```text
@@ -105,8 +109,11 @@ postgres:18
 **[PS]** 새 이름으로 빌드하고 4개만 push - 2장에서 한 번 빌드했으므로 캐시 덕분에 빠르다
 
 ```powershell
-docker compose build                                                  # 이름만 바뀌고 내용은 캐시에서 (1분 안쪽)
-docker compose push user-service post-service api-gateway frontend    # 우리 이미지 4개만 Docker Hub 로 (처음엔 몇 분)
+# build : 이미지 이름이 내 아이디로 바뀌었으니 그 이름으로 다시 굽는다. 내용은 2장의 캐시를 다시 써서 1분 안쪽
+docker compose build
+# push 서비스이름... : 적은 서비스의 이미지만 Docker Hub 로 올린다
+#   db(postgres:18)는 남의 공식 이미지라 올리지 않으려고 우리 것 4개만 적는다. 처음에는 몇 분 걸린다
+docker compose push user-service post-service api-gateway frontend
 ```
 
 ```text
