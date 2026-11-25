@@ -101,7 +101,10 @@ footer{padding:40px 0 50px;color:var(--sub);font-size:14px;text-align:center}
 <li>GitHub Actions 가 <strong>AWS EC2</strong>(아마존이 빌려주는 인터넷 컴퓨터)에 SSH 로 접속해서 "새 이미지를 받아 다시 켜라" 고 명령한다.</li>
 <li>사용자는 브라우저로 <code>http://EC2주소</code> 에 접속한다. 바깥에 열린 문은 <strong>80번 포트(nginx) 하나뿐</strong>이다.</li>
 </ol>
+<p>같은 흐름을 도구 이름까지 넣어 자세히 그리면 이렇다. 각 단계는 표시한 장에서 직접 해 본다.</p>
+<figure><a href="../images/fig_cicd_overview.jpg" target="_blank"><img src="../images/fig_cicd_overview.jpg" alt="React + Spring MSA 배포 전체 흐름 - ① 개발·push(7장) → ② GitHub Actions 가 4개 이미지를 동시에 빌드(6장) → ③ Docker Hub(3장) → ④ EC2 에서 compose pull·up -d(5장) → 브라우저 접속" loading="lazy"></a><figcaption>React + Spring MSA 배포 전체 흐름 - ① 개발·push(7장) → ② GitHub Actions 가 4개 이미지를 동시에 빌드(6장) → ③ Docker Hub(3장) → ④ EC2 에서 compose pull·up -d(5장) → 브라우저 접속</figcaption></figure>
 <blockquote class="note">
+<p>그림 ① 의 <code>server.env</code> 는 5장에서 내 PC 에 잠깐 만드는 서버용 비밀 값 파일이다. GitHub 에는 올리지 않고, 6장에서 GitHub Secrets 로 옮긴 뒤 지운다.</p>
 <p><strong>[배포 개념] 이 교안에서 배우는 네 가지</strong></p>
 <p>① <strong>이미지로 만들기 (Docker)</strong>: 프로그램과 실행 환경을 꾸러미 하나로 묶는다. 어느 컴퓨터에서나 똑같이 돈다.</p>
 <p>② <strong>이미지 창고 (Docker Hub)</strong>: 만든 이미지를 올려 두면 서버는 소스 코드 없이 이미지만 받아서 실행한다.</p>
